@@ -1,0 +1,98 @@
+<resources>
+    <string name="app_name">Privastead</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Privastead Camera</string>
+    <string name="nav_header_subtitle">Security with privacy!</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="menu_camera">Cameras</string>
+    <string name="menu_settings">Settings</string>
+    <string name="menu_slideshow">Account</string>
+
+    <!-- Add Camera -->
+    <string name="add_instructions">Note: Make sure the smartphone is connected to the same WiFi network as the camera hub.</string>
+    <string name="add_button_text">Add Camera</string>
+    <string name="add_failed">Adding camera failed! Make sure the camera IP address is correct.</string>
+    <string name="camera_add_button_description">Add a camera</string>
+    <string name="camera_name_hint">Camera name</string>
+    <string name="camera_name_exists">Camera name already exists! Choose a different one.</string>
+    <string name="enter_camera_name">Enter a name for the camera!</string>
+    <string name="camera_ip_hint">Camera hub IP address</string>
+    <string name="enter_camera_ip">Enter the IP address of the camera!</string>
+    <string name="scan_qr_code_text">Scan QR code</string>
+    <string name="qr_not_scanned">QR code: Not scanned!</string>
+    <string name="qr_scanned">QR code: Scanned!</string>
+    <string name="qr_not_scanned_toast">"Scan camera's QR code first!"</string>
+    <string name="intent_extra_camera_name">camera_name</string>
+    <string name="intent_extra_camera_ip">camera_ip</string>
+    <string name="intent_extra_camera_secret">camera_secret</string>
+    <string name="intent_extra_barcode">barcode</string>
+    <string name="permission_not_granted">Permission not granted!</string>
+    <string name="only_one_camera_allowed">We only support one camera (for now).</string>
+    <string name="wait_for_add">Working on adding the camera. Please wait!</string>
+    <string name="camera_name_no_space">Camera name cannot contain a space!</string>
+
+    <!-- Camera List -->
+    <string name="camera_instructions">Click on a camera to see the list of its videos. Long press to remove the camera and delete all its videos."</string>
+    <string name="delete_camera_videos_confirmation_text">This will delete the camera and all its videos. Are you sure you want to proceed?</string>
+
+    <!-- Video List -->
+    <string name="video_instructions">Click on a video to play. Long press to delete.</string>
+    <string name="livestream_button">Livestream</string>
+    <string name="delete_all_button">Delete all</string>
+    <string name="delete_confirmation_text">Are you sure you want to delete the video?</string>
+    <string name="delete_failed">Could not successfully delete the video from storage!</string>
+    <string name="delete_all_confirmation_text">This will delete all the videos of this camera. Are you sure you want to proceed?</string>
+    <string name="error_camera_access">Error accessing the camera data!</string>
+    <string name="delete_all_failed">Could not successfully delete all the videos from storage!</string>
+    <string name="wait_pending_video">This video has not been fully received yet. Please wait.</string>
+
+    <!-- Notification -->
+    <string name="channel_name">Notification Channel</string>
+    <string name="channel_description">Notification of new videos</string>
+    <string name="channel_id">Video</string>
+    <string name="foreground_service_channel_name">Download Notification Channel</string>
+    <string name="foreground_service_channel_description">Notification for download</string>
+    <string name="foreground_service_channel_id">ForegroundService</string>
+    <string name="notification_switch">Notifications</string>
+    <string name="saved_need_notification_state">NotificationState</string>
+
+    <!-- Theme -->
+    <string name="theme_switch">Night Theme</string>
+    <string name="saved_theme_switch_state">ThemeState</string>
+
+    <!-- Network Connection -->
+    <string name="first_time_connection_done">FirstTimeConnectionDone</string>
+    <string name="first_pairing_done">FirstPairingDone</string>
+    <string name="not_connected_server">Not connected to the server!</string>
+    <string name="try_again">Try again later!</string>
+    <string name="update_ip">Update server info</string>
+    <string name="ip_not_set">(not set)</string>
+    <string name="invalid_ip">Invalid IP address!</string>
+    <string name="enter_server_ip">Enter the server IP address!</string>
+    <string name="ip_hint">Server IP address</string>
+    <string name="saved_ip">SavedIP</string>
+    <string name="server_instructions">This app receives encrypted videos from your camera through an untrusted server. Please provide the server IP address and the credentials to access the server using a QR code.</string>
+    <string name="save_button_text">Save</string>
+    <string name="server_qr_not_scanned_toast">"Scan server's QR code first!"</string>
+    <string name="user_credentials">UserCredentials</string>
+
+    <!-- Shared Preferences -->
+    <string name="shared_preferences">SharedPreferences</string>
+
+    <!-- Rust Native -->
+    <string name="rust_native_initialized">RustNativeInitialized</string>
+
+    <!-- FCM Token -->
+    <string name="fcm_token">FCMToken</string>
+    <string name="need_update_fcm_token">NeedUpdateFCMToken</string>
+
+    <!-- Video player -->
+    <string name="save_video_text">Download</string>
+    <string name="video_downloaded">Video download successful!</string>
+    <string name="downloading_motion_videos">DownloadingMotionVideos</string>
+    <string name="livestream_end_processed">LivestreamEndProcessed</string>
+    <string name="download_confirmation_text">This will save the video to your gallery. Are you sure you want to proceed?</string>
+</resources>
