@@ -96,11 +96,11 @@ class RustNativeDataSource(isNetwork: Boolean, cam: String,
 
             val timestamp: Long = System.currentTimeMillis() / 1000
             val filePath = context.getFilesDir().toString() + "/camera_dir_" + camera +
-                    "/video_" + camera + "_" + timestamp + ".mkv"
+                    "/video_" + camera + "_" + timestamp + ".mp4"
             outputStream = FileOutputStream(filePath)
 
             val repository = (context as PrivasteadCameraApplication).repository
-            val videoName = "video_" + camera + "_" + timestamp + ".mkv"
+            val videoName = "video_" + camera + "_" + timestamp + ".mp4"
             val video = Video(camera, videoName, true, false)
             repository.insertVideo(video)
 

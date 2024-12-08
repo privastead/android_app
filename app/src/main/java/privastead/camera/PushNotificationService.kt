@@ -108,7 +108,7 @@ class PushNotificationService : FirebaseMessagingService() {
 
     private fun addPendingToRepository(cameraName: String, timestamp: String) {
         val repository = (applicationContext as PrivasteadCameraApplication).repository
-        val videoName = "video_" + cameraName + "_" + timestamp + ".mkv"
+        val videoName = "video_" + cameraName + "_" + timestamp + ".mp4"
         val video = Video(cameraName, videoName, false, true)
         repository.insertVideo(video)
     }

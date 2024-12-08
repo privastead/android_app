@@ -107,7 +107,7 @@ class VideoPlayerActivity : Activity() {
     private fun saveVideoToGallery(context: Context, srcFilePath: String, dstFileName: String) {
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, dstFileName)
-            put(MediaStore.MediaColumns.MIME_TYPE, "video/mkv")
+            put(MediaStore.MediaColumns.MIME_TYPE, "video/mp4")
             put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_MOVIES)
         }
 
