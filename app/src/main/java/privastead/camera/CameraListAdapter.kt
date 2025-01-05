@@ -49,8 +49,6 @@ import android.widget.Toast
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import privastead.camera.PrivasteadCameraApplication
-import privastead.camera.R
 import privastead.camera.CameraListAdapter.CameraViewHolder
 import java.io.File
 
@@ -76,27 +74,35 @@ class CameraListAdapter : ListAdapter<Camera, CameraViewHolder>(CAMERAS_COMPARAT
                 .setTitle("Confirm!")
                 .setMessage(holder.itemView.context.getString(R.string.delete_camera_videos_confirmation_text))
                 .setPositiveButton("Yes") { _, _ ->
-                    var cameraDir = File(holder.itemView.context.getFilesDir().toString() + "/camera_dir_" + current.camera)
-
+                    // Remove camera and its videos from databases
                     val camera = Camera(current.camera)
                     val repository = (holder.itemView.context.applicationContext as PrivasteadCameraApplication).repository
                     repository.deleteCameraVideos(current.camera)
                     repository.deleteCamera(camera)
 
+                    // Deregister from the server
+                    val sharedPref = holder.itemView.context.getSharedPreferences(holder.itemView.context.getString(R.string.shared_preferences), Context.MODE_PRIVATE)
+                    RustNativeInterface().deregister(current.camera, sharedPref, holder.itemView.context)
+
+                    // Remove camera name from camera_set and update a few other sharedpref vars.
+                    val cameraSet = sharedPref.getStringSet(holder.itemView.context.getString(R.string.camera_set), mutableSetOf())?.toMutableSet()
+
+                    with(sharedPref.edit()) {
+                        // FIXME: why do we set NeedUpdateFCMToken to true here?
+                        putBoolean(holder.itemView.context.getString(R.string.need_update_fcm_token), true)
+                        remove(holder.itemView.context.getString(R.string.first_time_connection_done) + "_" + current.camera)
+                        cameraSet?.remove(current.camera)
+                        putStringSet(holder.itemView.context.getString(R.string.camera_set), cameraSet)
+                        apply()
+                    }
+
+                    // Finally, delete all the files related to this camera.
+                    var cameraDir = File(holder.itemView.context.getFilesDir().toString() + "/camera_dir_" + current.camera)
                     if (!cameraDir.deleteRecursively()) {
                         Toast.makeText(
                             holder.itemView.context.applicationContext,
                             holder.itemView.context.getString(R.string.delete_all_failed),
                             Toast.LENGTH_LONG)
-                    }
-
-                    val sharedPref = holder.itemView.context.getSharedPreferences(holder.itemView.context.getString(R.string.shared_preferences), Context.MODE_PRIVATE)
-                    RustNativeInterface().deregister(sharedPref, holder.itemView.context)
-
-                    with(sharedPref.edit()) {
-                        putBoolean(holder.itemView.context.getString(R.string.first_pairing_done), false)
-                        putBoolean(holder.itemView.context.getString(R.string.need_update_fcm_token), true)
-                        apply()
                     }
                 }
                 .setNegativeButton("No", null)

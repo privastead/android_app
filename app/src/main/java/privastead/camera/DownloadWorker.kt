@@ -18,6 +18,7 @@ package privastead.camera
  */
 
 import android.content.Context
+import android.util.Log
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 
@@ -36,7 +37,9 @@ class DownloadWorker(context: Context, params: WorkerParameters) : Worker(contex
             apply()
         }
 
-        retrieveVideos()
+        val cameraName = inputData.getString(applicationContext.getString(R.string.camera_name_key))
+
+        retrieveVideos(cameraName!!)
 
         with(sharedPref.edit()) {
             putBoolean(
@@ -49,21 +52,25 @@ class DownloadWorker(context: Context, params: WorkerParameters) : Worker(contex
         return Result.success()
     }
 
-    private fun receive(): String {
+    private fun receive(cameraName: String): String {
         val sharedPref = applicationContext.getSharedPreferences(applicationContext.getString(R.string.shared_preferences), Context.MODE_PRIVATE)
-        return RustNativeInterface().receive(sharedPref, applicationContext)
+        return RustNativeInterface().receive(cameraName, sharedPref, applicationContext)
     }
 
-    private fun retrieveVideos() {
+    private fun retrieveVideos(cameraName: String) {
         val repository = (applicationContext as PrivasteadCameraApplication).repository
 
-        var response = receive()
+        var response = receive(cameraName)
         if (response == "None" || response == "Error") {
             return
         } else {
             val videoNames = response.split(",").toTypedArray()
             for (videoName in videoNames) {
-                val cameraName = videoName.split("_").toTypedArray().get(1)
+                val videoCameraName = videoName.split("_").toTypedArray().get(1)
+                if (videoCameraName != cameraName) {
+                    Log.e(applicationContext.getString(R.string.app_name), applicationContext.getString(R.string.error_unexpected_camera_name))
+                    return
+                }
                 val videoPending = Video(cameraName, videoName, false, true)
                 repository.deleteVideo(videoPending)
                 val video = Video(cameraName, videoName, true, true)

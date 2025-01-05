@@ -30,7 +30,6 @@
     <string name="intent_extra_camera_secret">camera_secret</string>
     <string name="intent_extra_barcode">barcode</string>
     <string name="permission_not_granted">Permission not granted!</string>
-    <string name="only_one_camera_allowed">We only support one camera (for now).</string>
     <string name="wait_for_add">Working on adding the camera. Please wait!</string>
     <string name="camera_name_no_space">Camera name cannot contain a space!</string>
 
@@ -65,7 +64,6 @@
 
     <!-- Network Connection -->
     <string name="first_time_connection_done">FirstTimeConnectionDone</string>
-    <string name="first_pairing_done">FirstPairingDone</string>
     <string name="not_connected_server">Not connected to the server!</string>
     <string name="try_again">Try again later!</string>
     <string name="update_ip">Update server info</string>
@@ -78,12 +76,14 @@
     <string name="save_button_text">Save</string>
     <string name="server_qr_not_scanned_toast">"Scan server's QR code first!"</string>
     <string name="user_credentials">UserCredentials</string>
+    <string name="camera_set">CameraSet</string>
 
     <!-- Shared Preferences -->
     <string name="shared_preferences">SharedPreferences</string>
 
     <!-- Rust Native -->
     <string name="rust_native_initialized">RustNativeInitialized</string>
+    <string name="error_create_dir">"Error: Failed to create directory for camera"</string>
 
     <!-- FCM Token -->
     <string name="fcm_token">FCMToken</string>
@@ -95,4 +95,8 @@
     <string name="downloading_motion_videos">DownloadingMotionVideos</string>
     <string name="livestream_end_processed">LivestreamEndProcessed</string>
     <string name="download_confirmation_text">This will save the video to your gallery. Are you sure you want to proceed?</string>
+
+    <!-- Worker -->
+    <string name="camera_name_key">CameraNameKey</string>
+    <string name="error_unexpected_camera_name">Error: Unexpected camera name.</string>
 </resources>

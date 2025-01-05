@@ -29,17 +29,17 @@ class RustNative {
     /// @firstTime: true if it's the very first time we're doing this.
     ///             false if we want to initialize using persisted state.
     /// returns false on error.
-    external fun initialize(serverIP: String, token: String, filesDir: String, firstTime: Boolean, userCredentials: ByteArray): Boolean
+    external fun initialize(serverIP: String, token: String, filesDir: String, cameraName: String, firstTime: Boolean, userCredentials: ByteArray): Boolean
 
     /// Used to deregister a camera.
     /// Note: Currently, we only allow one camera only, therefore no input parameter is needed to
     /// specify the camera.
     /// returns false on error.
-    external fun deregister()
+    external fun deregister(cameraName: String)
 
     /// Used the FCM token in the server.
     /// returns false on error.
-    external fun updateToken(token: String): Boolean
+    external fun updateToken(token: String, cameraName: String): Boolean
 
     /// Connect to a new camera.
     /// returns false on error.
@@ -49,13 +49,13 @@ class RustNative {
     /// Returns an array of "camera-name_timestamp" on success.
     /// returns "None" when there's nothing to return.
     /// returns "Error" on error.
-    external fun receive(): String
+    external fun receive(cameraName: String): String
 
     /// Used to decode an MLS message (received via FCM)
     /// Returns "camera-name_timestamp" on success.
     /// returns "None" when there's nothing to return.
     /// returns "Error" on error.
-    external fun decode(msg: ByteArray): String
+    external fun decode(cameraName: String, msg: ByteArray): String
 
     /// Used to start the livestream from the camera
     /// returns false on error.
@@ -63,9 +63,9 @@ class RustNative {
 
     /// Used to end the livestream from the camera
     /// returns false on error.
-    external fun livestreamEnd(): Boolean
+    external fun livestreamEnd(cameraName: String): Boolean
 
     /// Used to read the next bytearray from the livestream
     /// Currently, panics on error.
-    external fun livestreamRead(len: Int): ByteArray
+    external fun livestreamRead(cameraName: String, len: Int): ByteArray
 }

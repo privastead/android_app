@@ -40,14 +40,13 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.Constraints
+import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import privastead.camera.PrivasteadCameraApplication
-import privastead.camera.R
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -67,37 +66,48 @@ class PushNotificationService : FirebaseMessagingService() {
             if (encodedByteArray != null) {
                 val byteArray = Base64.decode(encodedByteArray, Base64.DEFAULT)
                 val sharedPref = getSharedPreferences(getString(R.string.shared_preferences), Context.MODE_PRIVATE)
-                val response = RustNativeInterface().decode(byteArray, sharedPref, applicationContext)
 
-                if (response == "None") {
-                    // In this case, the camera just sent a notification for us to start downloading.
-                    // Note: it is important to start the foreground service after we have decrypted
-                    // the FCM payload. Otherwise, we might process an MLS update, which would make
-                    // it impossible to decrypt the FCM payload.
+                // We don't know which camera sent the notification. Therefore, we'll ask all of them
+                // to try to decrypt the message. Only one will succeed.
+                val cameraSet = sharedPref.getStringSet(getString(R.string.camera_set), emptySet())
+                cameraSet?.forEach { name ->
+                    val response = RustNativeInterface().decode(name, byteArray, sharedPref, applicationContext)
+                    if (response == "Download") {
+                        // In this case, the camera just sent a notification for us to start downloading.
+                        // Note: it is important to start the foreground service after we have decrypted
+                        // the FCM payload. Otherwise, we might process an MLS update, which would make
+                        // it impossible to decrypt the FCM payload.
+                        val params = Data.Builder()
+                            .putString(getString(R.string.camera_name_key), name)
+                            .build()
 
-                    val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
-                        .setConstraints(
-                            Constraints.Builder()
-                                .setRequiredNetworkType(NetworkType.CONNECTED)
-                                .build()
+                        val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
+                            .setConstraints(
+                                Constraints.Builder()
+                                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                                    .build()
+                            )
+                            .setInputData(params)
+                            .build()
+
+                        WorkManager.getInstance(applicationContext).enqueueUniqueWork(
+                            "DownloadTask$name", // Unique name
+                            ExistingWorkPolicy.KEEP, // Prevent duplicate work
+                            workRequest
                         )
-                        .build()
+                    } else if (response != "Error" && response != "None") {
+                        // In this case, there is a new motion video and we need to display a notification
+                        // to the user.
+                        var needNotification = sharedPref?.getBoolean(applicationContext.getString(R.string.saved_need_notification_state), true)
 
-                    WorkManager.getInstance(applicationContext).enqueueUniqueWork(
-                        "DownloadTask", // Unique name
-                        ExistingWorkPolicy.KEEP, // Prevent duplicate work
-                        workRequest
-                    )
-                } else if (response != "Error") {
-                    var needNotification = sharedPref?.getBoolean(applicationContext.getString(R.string.saved_need_notification_state), true)
-
-                    if (needNotification == true) {
-                        //FIXME: does this need to be called every time?
-                        createNotificationChannel()
-                        val cameraName = response.split("_").toTypedArray().get(0)
-                        val timestamp = response.split("_").toTypedArray().get(1)
-                        sendNotification(cameraName, timestamp)
-                        addPendingToRepository(cameraName, timestamp)
+                        if (needNotification == true) {
+                            //FIXME: does this need to be called every time?
+                            createNotificationChannel()
+                            val cameraName = response.split("_").toTypedArray().get(0)
+                            val timestamp = response.split("_").toTypedArray().get(1)
+                            sendNotification(cameraName, timestamp)
+                            addPendingToRepository(cameraName, timestamp)
+                        }
                     }
                 }
             }
@@ -207,15 +217,26 @@ class PushNotificationService : FirebaseMessagingService() {
 
         val sharedPref = getSharedPreferences(getString(R.string.shared_preferences), Context.MODE_PRIVATE)
 
+        with(sharedPref.edit()) {
+            putString(getString(R.string.fcm_token), token)
+            apply()
+        }
+
         // First, we'll try to update here
-        if (RustNativeInterface().updateToken(token, sharedPref, applicationContext)) {
+        val cameraSet = sharedPref.getStringSet(getString(R.string.camera_set), emptySet())
+        var allUpdatesSuccessful = true
+        cameraSet?.forEach { name ->
+            if (!RustNativeInterface().updateToken(name, token, sharedPref, applicationContext)) {
+                allUpdatesSuccessful = false
+            }
+        }
+        if (allUpdatesSuccessful) {
             wakeLock.release()
             return
         }
 
-        // We failed to update. Let's save it here and have it be updated on next launch.
+        // We failed to update. Let's have it be updated on next launch.
         with(sharedPref.edit()) {
-            putString(getString(R.string.fcm_token), token)
             putBoolean(getString(R.string.need_update_fcm_token), true)
             apply()
         }

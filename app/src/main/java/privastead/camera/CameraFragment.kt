@@ -63,22 +63,11 @@ class CameraFragment : Fragment() {
 
         val fab: FloatingActionButton = binding.fab
         fab.setOnClickListener {
-            var firstPairingDone =
-                sharedPref.getBoolean(getString(R.string.first_pairing_done), false)
-
-            if (firstPairingDone) {
-                Toast.makeText(
-                    parentFragment?.activity?.applicationContext,
-                    getString(R.string.only_one_camera_allowed),
-                    Toast.LENGTH_LONG
-                ).show()
-            } else {
-                val intent = Intent(
-                    parentFragment?.activity?.applicationContext,
-                    NewCameraActivity::class.java
-                )
-                startActivityForResult(intent, newCameraActivityRequestCode)
-            }
+            val intent = Intent(
+                parentFragment?.activity?.applicationContext,
+                NewCameraActivity::class.java
+            )
+            startActivityForResult(intent, newCameraActivityRequestCode)
         }
 
         cameraViewModel.allCameras.observe(viewLifecycleOwner) { cameras ->
@@ -95,10 +84,13 @@ class CameraFragment : Fragment() {
                 if (needFcmUpdate) {
                     sharedPref.getString(getString(R.string.fcm_token), "")
                         ?.let {
-                            RustNativeInterface().updateToken(
-                                it, sharedPref,
-                                requireParentFragment().requireActivity().applicationContext
-                            )
+                            val cameraSet = sharedPref.getStringSet(getString(R.string.camera_set), emptySet())
+                            cameraSet?.forEach { name ->
+                                RustNativeInterface().updateToken(
+                                    name, it, sharedPref,
+                                    requireParentFragment().requireActivity().applicationContext
+                                )
+                            }
                         }
                     with(sharedPref.edit()) {
                         //FIXME: we don't check the return value from updateToken. What if it failed?
@@ -139,8 +131,12 @@ class CameraFragment : Fragment() {
                     GlobalScope.launch {
                         val camera = Camera(cameraName)
                         cameraViewModel.insert(camera)
+
+                        // We also store the set of camera names in sharedPreferences
+                        val cameraSet = sharedPref.getStringSet(getString(R.string.camera_set), mutableSetOf())?.toMutableSet()
                         with(sharedPref!!.edit()) {
-                            putBoolean(getString(R.string.first_pairing_done), true)
+                            cameraSet?.add(cameraName)
+                            putStringSet(getString(R.string.camera_set), cameraSet)
                             apply()
                         }
                     }

@@ -38,6 +38,7 @@ package privastead.camera
  */
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.InetAddresses
 import android.os.Build
@@ -102,18 +103,17 @@ class NewCameraActivity : AppCompatActivity(), CameraRepository.RepoCallback {
                     Toast.LENGTH_LONG
                 ).show()
             } else {
-                /* TODO: this code checks whether this camera name has been used before or not.
-                 * It's buggy. The code marked with FIXME below causes hangs.
-                 * For now, we don't need this code since we only allow one camera.
-                 * Needs to be fixed if we want to support more than one camera.
-                val repository = (this.application as PrivasteadCameraApplication).repository
-                resultReceived = false
-                repository.cameraExists(editCameraNameView.text.toString(), this)
-                // FIXME: not a great trick. The wait should be short, but regardless not great.
-                while (!resultReceived) {
+                val cameraName = editCameraNameView.text.toString()
+                var cameraNameTaken = false
+                val sharedPref = this.applicationContext.getSharedPreferences(getString(R.string.shared_preferences), Context.MODE_PRIVATE)
+                val cameraSet = sharedPref.getStringSet(getString(R.string.camera_set), emptySet())
+                cameraSet?.forEach { name ->
+                    if (name == cameraName) {
+                        cameraNameTaken = true
+                    }
                 }
 
-                if (resultVal > 0) {
+                if (cameraNameTaken) {
                     editCameraNameView.setText("")
                     editCameraNameView.hint = getString(R.string.camera_name_hint)
 
@@ -124,10 +124,8 @@ class NewCameraActivity : AppCompatActivity(), CameraRepository.RepoCallback {
                     ).show()
 
                 } else {
-                 */
                     val replyIntent = Intent()
 
-                    val cameraName = editCameraNameView.text.toString()
                     val cameraIP = editCameraIPView.text.toString()
                     replyIntent.putExtra(getString(R.string.intent_extra_camera_name), cameraName)
                     replyIntent.putExtra(getString(R.string.intent_extra_camera_ip), cameraIP)
@@ -137,7 +135,7 @@ class NewCameraActivity : AppCompatActivity(), CameraRepository.RepoCallback {
                     )
                     setResult(Activity.RESULT_OK, replyIntent)
                     finish()
-                //}
+                }
             }
         }
 

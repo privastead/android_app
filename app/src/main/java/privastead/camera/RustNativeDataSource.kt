@@ -52,7 +52,7 @@ class RustNativeDataSource(isNetwork: Boolean, cam: String,
 
         if (!sharedPref.getBoolean(context.getString(R.string.livestream_end_processed), true)) {
             // Clean up the last session if we didn't get a chance to do that on close()
-            RustNativeInterface().livestreamEnd(sharedPref, context)
+            RustNativeInterface().livestreamEnd(camera, sharedPref, context)
             connected = true
         }
 
@@ -83,7 +83,7 @@ class RustNativeDataSource(isNetwork: Boolean, cam: String,
 
     @Throws(IOException::class)
     override fun read(buffer: ByteArray, offset: Int, readLength: Int): Int {
-        var videoBuffer = RustNativeInterface().livestreamReadNoConnect(readLength)
+        var videoBuffer = RustNativeInterface().livestreamReadNoConnect(camera, readLength)
         var videoBufferLen = videoBuffer.size
         if (videoBufferLen == 0) {
             return 0
@@ -122,7 +122,7 @@ class RustNativeDataSource(isNetwork: Boolean, cam: String,
             needToCloseFile = false
         }
 
-        RustNativeInterface().livestreamEndNoConnect()
+        RustNativeInterface().livestreamEndNoConnect(camera)
 
         with(sharedPref.edit()) {
             putBoolean(context.getString(R.string.livestream_end_processed), true)
