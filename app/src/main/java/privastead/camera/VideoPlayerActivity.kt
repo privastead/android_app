@@ -43,7 +43,6 @@ import com.google.android.exoplayer2.source.ProgressiveMediaSource
 import com.google.android.exoplayer2.ui.StyledPlayerView
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultDataSource
-import com.google.android.exoplayer2.util.EventLogger
 import com.google.android.exoplayer2.util.Util
 import privastead.camera.databinding.ActivityVideoPlayerBinding
 import java.io.File
@@ -144,8 +143,6 @@ class VideoPlayerActivity : Activity() {
         simpleExoPlayer = ExoPlayer.Builder(this)
             .setMediaSourceFactory(mediaSourceFactory)
             .build()
-
-        simpleExoPlayer.addAnalyticsListener(EventLogger(null))
 
         simpleExoPlayer.addMediaSource(mediaSource)
 
