@@ -125,28 +125,44 @@ class CameraFragment : Fragment() {
             var cameraIP = intentData?.getStringExtra(getString(R.string.intent_extra_camera_ip))
             var cameraSecret = intentData?.getByteArrayExtra(getString(R.string.intent_extra_camera_secret))
             if (cameraName != null && cameraIP != null && cameraSecret != null) {
-                val sharedPref = activity?.getSharedPreferences(getString(R.string.shared_preferences), Context.MODE_PRIVATE)
-                if (RustNativeInterface().addCamera(cameraName, cameraIP, cameraSecret,
-                        sharedPref!!, requireParentFragment().requireActivity().applicationContext)) {
-                    GlobalScope.launch {
+                val sharedPref = activity?.getSharedPreferences(
+                    getString(R.string.shared_preferences),
+                    Context.MODE_PRIVATE
+                )
+                GlobalScope.launch {
+                    if (RustNativeInterface().addCamera(
+                            cameraName,
+                            cameraIP,
+                            cameraSecret,
+                            sharedPref!!,
+                            requireParentFragment().requireActivity().applicationContext
+                        )
+                    ) {
                         val camera = Camera(cameraName)
                         cameraViewModel.insert(camera)
 
                         // We also store the set of camera names in sharedPreferences
-                        val cameraSet = sharedPref.getStringSet(getString(R.string.camera_set), mutableSetOf())?.toMutableSet()
+                        val cameraSet =
+                            sharedPref.getStringSet(getString(R.string.camera_set), mutableSetOf())
+                                ?.toMutableSet()
                         with(sharedPref!!.edit()) {
                             cameraSet?.add(cameraName)
                             putStringSet(getString(R.string.camera_set), cameraSet)
-                            putBoolean(getString(R.string.first_time_connection_done) + "_" + cameraName, true)
+                            putBoolean(
+                                getString(R.string.first_time_connection_done) + "_" + cameraName,
+                                true
+                            )
                             apply()
                         }
+                    } else {
+                        /* FIXME: can't show Toast here.
+                        Toast.makeText(
+                            parentFragment?.activity?.applicationContext,
+                            getString(R.string.add_failed),
+                            Toast.LENGTH_LONG
+                        ).show()
+                         */
                     }
-                } else {
-                    Toast.makeText(
-                        parentFragment?.activity?.applicationContext,
-                        getString(R.string.add_failed),
-                        Toast.LENGTH_LONG
-                    ).show()
                 }
             } else {
                 Toast.makeText(
