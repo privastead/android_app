@@ -137,6 +137,7 @@ class CameraFragment : Fragment() {
                         with(sharedPref!!.edit()) {
                             cameraSet?.add(cameraName)
                             putStringSet(getString(R.string.camera_set), cameraSet)
+                            putBoolean(getString(R.string.first_time_connection_done) + "_" + cameraName, true)
                             apply()
                         }
                     }

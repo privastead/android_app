@@ -67,14 +67,7 @@ class RustNativeInterface {
 
         if (!firstTimeConnectionDone) {
             val success = RustNativeInterface().connectCore(cameraName, sharedPref, context, true)
-
-            if (success) {
-                with(sharedPref.edit()) {
-                    putBoolean(context.getString(R.string.first_time_connection_done) + "_" + cameraName, true)
-                    apply()
-                }
-            }
-
+            
             //FIXME: the goal here was to inform the user that we couldn't connect.
             //But this crashed on the very first call by updateToken at install time.
             //In general, we need a better mechanism to let the user know that the IP address
