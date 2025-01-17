@@ -42,6 +42,7 @@
     <string name="livestream_button">Livestream</string>
     <string name="delete_all_button">Delete all</string>
     <string name="delete_confirmation_text">Are you sure you want to delete the video?</string>
+    <string name="delete_pending_confirmation_text">Are you sure you want to delete this pending video placeholder? Even if you do, the video will show up in the list once it is fully downloaded.</string>
     <string name="delete_failed">Could not successfully delete the video from storage!</string>
     <string name="delete_all_confirmation_text">This will delete all the videos of this camera. Are you sure you want to proceed?</string>
     <string name="error_camera_access">Error accessing the camera data!</string>

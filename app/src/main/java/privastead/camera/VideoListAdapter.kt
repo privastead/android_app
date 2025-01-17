@@ -109,11 +109,17 @@ class VideoListAdapter : ListAdapter<Video, VideoViewHolder>(VIDEOS_COMPARATOR) 
                     .setNegativeButton("No", null)
                     .show()
             } else {
-                Toast.makeText(
-                    holder.itemView.context,
-                    holder.itemView.context.getString(R.string.wait_pending_video),
-                    Toast.LENGTH_LONG
-                ).show()
+                AlertDialog.Builder(holder.itemView.context)
+                    .setTitle("Confirm!")
+                    .setMessage(holder.itemView.context.getString(R.string.delete_pending_confirmation_text))
+                    .setPositiveButton("Yes") { _, _ ->
+                        val video = Video(current.camera, current.video, current.received, current.motion)
+                        val repository =
+                            (holder.itemView.context.applicationContext as PrivasteadCameraApplication).repository
+                        repository.deleteVideo(video)
+                    }
+                    .setNegativeButton("No", null)
+                    .show()
             }
 
             true
