@@ -29,16 +29,19 @@ class RustNativeInterface {
     private fun connectCore(cameraName: String, sharedPref: SharedPreferences, context: Context, firstTime: Boolean): Boolean {
         var serverIP = sharedPref.getString(context.getString(R.string.saved_ip), "Error")
         if (serverIP == null || serverIP == "Error") {
+            Log.e(context.getString(R.string.app_name), "Error: Failed to retrieve the server IP address")
             return false
         }
 
         var fcmToken = sharedPref.getString(context.getString(R.string.fcm_token), "Error")
         if (fcmToken == null || fcmToken == "Error") {
+            Log.e(context.getString(R.string.app_name), "Error: Failed to retrieve the FCM token")
             return false
         }
 
         var userCredentialsString = sharedPref.getString(context.getString(R.string.user_credentials), "Error")
         if (userCredentialsString == null || userCredentialsString == "Error") {
+            Log.e(context.getString(R.string.app_name), "Error: Failed to retrieve user credentials")
             return false
         }
 
@@ -54,7 +57,7 @@ class RustNativeInterface {
                 Log.e(context.getString(R.string.app_name), context.getString(R.string.error_create_dir))
             }
         }
-
+        
         return RustNative().initialize(serverIP, fcmToken, filesDir, cameraName, firstTime, userCredentials)
     }
 
