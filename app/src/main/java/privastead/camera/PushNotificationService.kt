@@ -71,7 +71,7 @@ class PushNotificationService : FirebaseMessagingService() {
                 // to try to decrypt the message. Only one will succeed.
                 val cameraSet = sharedPref.getStringSet(getString(R.string.camera_set), emptySet())
                 cameraSet?.forEach { name ->
-                    val response = RustNativeInterface().decode(name, byteArray, sharedPref, applicationContext)
+                    val response = RustNativeInterface().decrypt(name, byteArray, sharedPref, applicationContext)
                     if (response == "Download") {
                         // In this case, the camera just sent a notification for us to start downloading.
                         // Note: it is important to start the foreground service after we have decrypted

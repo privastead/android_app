@@ -29,7 +29,7 @@ class RustNative {
     /// @firstTime: true if it's the very first time we're doing this.
     ///             false if we want to initialize using persisted state.
     /// returns false on error.
-    external fun initialize(serverIP: String, token: String, filesDir: String, cameraName: String, firstTime: Boolean, userCredentials: ByteArray): Boolean
+    external fun initialize(serverIP: String, token: String, filesDir: String, cameraName: String, firstTime: Boolean, userCredentials: ByteArray, needNetwork: Boolean): Boolean
 
     /// Used to deregister a camera.
     /// Note: Currently, we only allow one camera only, therefore no input parameter is needed to
@@ -51,11 +51,11 @@ class RustNative {
     /// returns "Error" on error.
     external fun receive(cameraName: String): String
 
-    /// Used to decode an MLS message (received via FCM)
+    /// Used to decrypt an MLS message (received via FCM)
     /// Returns "camera-name_timestamp" on success.
     /// returns "None" when there's nothing to return.
     /// returns "Error" on error.
-    external fun decode(cameraName: String, msg: ByteArray): String
+    external fun decrypt(cameraName: String, msg: ByteArray): String
 
     /// Used to start the livestream from the camera
     /// returns false on error.
