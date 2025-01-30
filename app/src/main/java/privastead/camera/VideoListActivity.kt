@@ -27,6 +27,10 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class VideoListActivity : AppCompatActivity() {
@@ -81,16 +85,21 @@ class VideoListActivity : AppCompatActivity() {
                                     .toString() + "/camera_dir_" + camera
                             )
 
+                            // Delete all videos in the camera repository
                             val repository =
                                 (applicationContext as PrivasteadCameraApplication).repository
                             repository.deleteCameraVideos(camera)
 
-                            if (!cameraDir.deleteRecursively()) {
-                                Toast.makeText(
-                                    applicationContext,
-                                    getString(R.string.delete_all_failed),
-                                    Toast.LENGTH_LONG
-                                )
+                            // Delete all videos in the camera directory (which all are prefixed with video_)
+                            CoroutineScope(Dispatchers.IO).launch {
+                                val listOfFiles = cameraDir.listFiles()?.filter { it.name.startsWith("video_") } ?: emptyList()
+                                val failedFiles = listOfFiles.filterNot { it.delete() }
+
+                                withContext(Dispatchers.Main) {
+                                    if (failedFiles.isNotEmpty()) {
+                                        Toast.makeText(applicationContext, getString(R.string.delete_all_failed), Toast.LENGTH_LONG).show()
+                                    }
+                                }
                             }
                         }
                         .setNegativeButton("No", null)
