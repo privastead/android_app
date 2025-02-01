@@ -44,6 +44,7 @@ import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -88,6 +89,7 @@ class PushNotificationService : FirebaseMessagingService() {
                                     .build()
                             )
                             .setInputData(params)
+                            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                             .build()
 
                         WorkManager.getInstance(applicationContext).enqueueUniqueWork(
