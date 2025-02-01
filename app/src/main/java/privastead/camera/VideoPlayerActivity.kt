@@ -94,6 +94,7 @@ class VideoPlayerActivity : Activity() {
         }
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         val intent = Intent(this, VideoListActivity::class.java)
         val bundle = Bundle()

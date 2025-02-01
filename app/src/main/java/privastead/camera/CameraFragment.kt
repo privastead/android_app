@@ -109,6 +109,7 @@ class CameraFragment : Fragment() {
         _binding = null
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, intentData: Intent?) {
         super.onActivityResult(requestCode, resultCode, intentData)
 

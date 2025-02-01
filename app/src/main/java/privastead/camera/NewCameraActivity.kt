@@ -151,6 +151,7 @@ class NewCameraActivity : AppCompatActivity(), CameraRepository.RepoCallback {
         resultReceived = true
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, intentData: Intent?) {
         super.onActivityResult(requestCode, resultCode, intentData)
 
