@@ -36,14 +36,26 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/mobile_network_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="208dp"
+        android:text="@string/mobile_network_switch"
+        android:textSize="10pt"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.142"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
         android:id="@+id/theme_switch"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="204dp"
+        android:layout_marginTop="296dp"
         android:text="@string/theme_switch"
         android:textSize="10pt"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.096"
+        app:layout_constraintHorizontal_bias="0.1"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -51,7 +63,7 @@
         android:id="@+id/notification_switch"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="308dp"
+        android:layout_marginTop="392dp"
         android:text="@string/notification_switch"
         android:textSize="10pt"
         app:layout_constraintEnd_toEndOf="parent"

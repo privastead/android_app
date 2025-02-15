@@ -31,6 +31,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.net.ConnectivityManager
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
@@ -75,28 +76,33 @@ class PushNotificationService : FirebaseMessagingService() {
                     val response = RustNativeInterface().decrypt(name, byteArray, sharedPref, applicationContext)
                     if (response == "Download") {
                         // In this case, the camera just sent a notification for us to start downloading.
-                        // Note: it is important to start the foreground service after we have decrypted
-                        // the FCM payload. Otherwise, we might process an MLS update, which would make
-                        // it impossible to decrypt the FCM payload.
-                        val params = Data.Builder()
-                            .putString(getString(R.string.camera_name_key), name)
-                            .build()
 
-                        val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
-                            .setConstraints(
-                                Constraints.Builder()
-                                    .setRequiredNetworkType(NetworkType.CONNECTED)
-                                    .build()
+                        val useMobile = sharedPref.getBoolean(getString(R.string.use_mobile_state), false)
+                        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+                        val isMetered = connectivityManager.isActiveNetworkMetered
+                        val isRestricted = (connectivityManager.restrictBackgroundStatus == ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED)
+
+                        if (!isMetered || (useMobile && !isRestricted)) {
+                            val params = Data.Builder()
+                                .putString(getString(R.string.camera_name_key), name)
+                                .build()
+
+                            val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
+                                .setConstraints(
+                                    Constraints.Builder()
+                                        .setRequiredNetworkType(NetworkType.CONNECTED)
+                                        .build()
+                                )
+                                .setInputData(params)
+                                .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+                                .build()
+
+                            WorkManager.getInstance(applicationContext).enqueueUniqueWork(
+                                "DownloadTask$name", // Unique name
+                                ExistingWorkPolicy.KEEP, // Prevent duplicate work
+                                workRequest
                             )
-                            .setInputData(params)
-                            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
-                            .build()
-
-                        WorkManager.getInstance(applicationContext).enqueueUniqueWork(
-                            "DownloadTask$name", // Unique name
-                            ExistingWorkPolicy.KEEP, // Prevent duplicate work
-                            workRequest
-                        )
+                        }
                     } else if (response != "Error" && response != "None") {
                         // In this case, there is a new motion video and we need to display a notification
                         // to the user.

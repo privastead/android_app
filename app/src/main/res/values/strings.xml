@@ -48,6 +48,7 @@
     <string name="error_camera_access">Error accessing the camera data!</string>
     <string name="delete_all_failed">Could not successfully delete all the videos from storage!</string>
     <string name="wait_pending_video">This video has not been fully received yet. Please wait.</string>
+    <string name="wifi_instructions">Currently, videos will be fetched only when connected to WiFi (but not mobile network). You can remove this restriction in the settings.</string>
 
     <!-- Notification -->
     <string name="channel_name">Notification Channel</string>
@@ -59,15 +60,18 @@
     <string name="notification_switch">Notifications</string>
     <string name="saved_need_notification_state">NotificationState</string>
 
-    <!-- Theme -->
+    <!-- Settings -->
     <string name="theme_switch">Night Theme</string>
     <string name="saved_theme_switch_state">ThemeState</string>
+    <string name="update_ip">Update server info</string>
+    <string name="use_mobile_state">UseMobile</string>
+    <string name="mobile_network_switch">Use mobile network</string>
+    <string name="mobile_network_next_step_instructions">This will take you to the system\'s mobile data usage page for the app. To allow the app to fetch videos instantly when connected to a mobile network, enable both "Background data" and "Unrestricted mobile data usage" options.</string>
 
     <!-- Network Connection -->
     <string name="first_time_connection_done">FirstTimeConnectionDone</string>
     <string name="not_connected_server">Not connected to the server!</string>
     <string name="try_again">Try again later!</string>
-    <string name="update_ip">Update server info</string>
     <string name="ip_not_set">(not set)</string>
     <string name="invalid_ip">Invalid IP address!</string>
     <string name="enter_server_ip">Enter the server IP address!</string>

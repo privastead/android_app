@@ -18,7 +18,9 @@ package privastead.camera
  */
 
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
@@ -39,6 +41,20 @@ class VideoListActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_video_list)
+
+        // Show mobile network restriction instructions if needed
+        val sharedPref = getSharedPreferences(getString(R.string.shared_preferences), Context.MODE_PRIVATE)
+        val useMobile = sharedPref.getBoolean(getString(R.string.use_mobile_state), false)
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val isRestricted = (connectivityManager.restrictBackgroundStatus == ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED)
+        if (!useMobile || isRestricted) {
+            val instructionText = findViewById<TextView>(R.id.instruction_text)
+            instructionText.text = String.format(
+                "%s %s",
+                getString(R.string.video_instructions),
+                getString(R.string.wifi_instructions)
+            )
+        }
 
         val bundle = intent.extras
         if (bundle != null) {
