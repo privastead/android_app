@@ -43,7 +43,7 @@ class RustNative {
 
     /// Connect to a new camera.
     /// returns false on error.
-    external fun addCamera(cameraName: String, cameraIP: String, cameraSecret: ByteArray): Boolean
+    external fun addCamera(cameraName: String, cameraIP: String, cameraSecret: ByteArray, standaloneCamera: Boolean, wifiSsid: String, wifiPassword: String): Boolean
 
     /// Used to process incoming messages and receive videos.
     /// Returns an array of "camera-name_timestamp" on success.

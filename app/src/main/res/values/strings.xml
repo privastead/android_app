@@ -14,7 +14,7 @@
     <!-- Add Camera -->
     <string name="add_instructions">Note: Make sure the smartphone is connected to the same WiFi network as the camera hub.</string>
     <string name="add_button_text">Add Camera</string>
-    <string name="add_failed">Adding camera failed! Make sure the camera IP address is correct.</string>
+    <string name="add_failed">Failed to add the camera!</string>
     <string name="camera_add_button_description">Add a camera</string>
     <string name="camera_name_hint">Camera name</string>
     <string name="camera_name_exists">Camera name already exists! Choose a different one.</string>
@@ -25,13 +25,29 @@
     <string name="qr_not_scanned">QR code: Not scanned!</string>
     <string name="qr_scanned">QR code: Scanned!</string>
     <string name="qr_not_scanned_toast">"Scan camera's QR code first!"</string>
-    <string name="intent_extra_camera_name">camera_name</string>
-    <string name="intent_extra_camera_ip">camera_ip</string>
-    <string name="intent_extra_camera_secret">camera_secret</string>
+    <string name="intent_extra_camera_name">CameraName</string>
     <string name="intent_extra_barcode">barcode</string>
     <string name="permission_not_granted">Permission not granted!</string>
     <string name="wait_for_add">Working on adding the camera. Please wait!</string>
     <string name="camera_name_no_space">Camera name cannot contain a space!</string>
+    <string name="select_camera_type_instructions">Choose the camera type to add</string>
+    <string name="standalone_camera_button_text">Privastead camera</string>
+    <string name="ip_camera_button_text">IP camera via Privastead hub</string>
+    <string name="camera_type_standalone">CameraTypeStandalone</string>
+    <string name="wifi_ssid_hint">WiFi SSID (for camera to connect to)</string>
+    <string name="wifi_password_hint">WiFi password</string>
+    <string name="enter_wifi_ssid">Enter the SSID of the WiFi network you want the camera to connect to!</string>
+    <string name="enter_wifi_password">Enter the password of the WiFi network you want the camera to connect to!</string>
+    <string name="hotspot_activity_instructions">We need to connect to the camera. To do so, we need to connect to the WiFi hotspot that the camera creates. Make sure the camera is plugged in and ready.</string>
+    <string name="hotspot_not_connected">Status: Not connected to the camera hotspot</string>
+    <string name="hotspot_connected">Status: Connected to the camera hotspot</string>
+    <string name="connect_hotspot_text">Connect</string>
+    <string name="connect_hotspot_instructions">This will take you to the system\'s WiFi settings page. Please connect to Privastead WiFi hotspot. Password is 12345678. Also, please disconnect mobile/cellular network.</string>
+    <string name="next_text">Next</string>
+    <string name="internet_activity_instructions">The last step in adding a camera requires Internet access. Make sure you are connected to Internet (WiFi or mobile network) and then press Finish.</string>
+    <string name="finish_text">Finish</string>
+    <string name="add_failed_no_internet">Failed to connect to the server. Make sure your phone is connected to the Internet!</string>
+    <string name="not_connected_to_hotspot">It seems like the phone is not connected to the camera hotspot!</string>
 
     <!-- Camera List -->
     <string name="camera_instructions">Click on a camera to see the list of its videos. Long press to remove the camera and delete all its videos."</string>
@@ -104,4 +120,10 @@
     <!-- Worker -->
     <string name="camera_name_key">CameraNameKey</string>
     <string name="error_unexpected_camera_name">Error: Unexpected camera name.</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">First Fragment</string>
+    <string name="second_fragment_label">Second Fragment</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+
 </resources>

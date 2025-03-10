@@ -37,37 +37,59 @@ package privastead.camera
  * limitations under the License.
  */
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
 import android.net.InetAddresses
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
+import android.util.Log
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.textfield.TextInputLayout
 
-class NewCameraActivity : AppCompatActivity(), CameraRepository.RepoCallback {
-    private var resultReceived: Boolean = false
-    private var resultVal: Int = 0
+class NewCameraActivity : AppCompatActivity() {
     private var qrScanned: Boolean = false
     private var cameraSecret: ByteArray = byteArrayOf()
-
-    private val QrScannerActivityRequestCode = 4
 
     @RequiresApi(Build.VERSION_CODES.Q)
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_new_camera)
+
         val editCameraNameView = findViewById<EditText>(R.id.edit_camera_name)
         val editCameraIPView = findViewById<EditText>(R.id.edit_camera_ip)
+        val editWifiSsid = findViewById<EditText>(R.id.edit_wifi_ssid)
+        val editWifiPassword = findViewById<EditText>(R.id.edit_wifi_password)
+        val editWifiPasswordToggle = findViewById<TextInputLayout>(R.id.edit_wifi_password_toggle)
+
+        val standaloneCamera = intent.getBooleanExtra(getString(R.string.camera_type_standalone), true)
+        if (standaloneCamera) {
+            editCameraIPView.visibility = View.GONE
+        } else {
+            editWifiSsid.visibility = View.GONE
+            editWifiPassword.visibility = View.GONE
+            editWifiPasswordToggle.visibility = View.GONE
+        }
 
         val buttonSave = findViewById<Button>(R.id.button_save)
         buttonSave.setOnClickListener {
+            val cameraIp = if (standaloneCamera) {
+                "10.42.0.1"
+            } else {
+                editCameraIPView.text.toString()
+            }
 
             if (TextUtils.isEmpty(editCameraNameView.text)) {
                 Toast.makeText(
@@ -81,13 +103,13 @@ class NewCameraActivity : AppCompatActivity(), CameraRepository.RepoCallback {
                     getString(R.string.camera_name_no_space),
                     Toast.LENGTH_LONG
                 ).show()
-            } else if (TextUtils.isEmpty((editCameraIPView.text))) {
+            } else if (TextUtils.isEmpty(cameraIp)) {
                 Toast.makeText(
                     this.applicationContext,
                     getString(R.string.enter_camera_ip),
                     Toast.LENGTH_LONG
                 ).show()
-            } else if (!InetAddresses.isNumericAddress(editCameraIPView.text.toString())) {
+            } else if (!InetAddresses.isNumericAddress(cameraIp)) {
                 Toast.makeText(
                     this.applicationContext,
                     getString(R.string.invalid_ip),
@@ -100,6 +122,18 @@ class NewCameraActivity : AppCompatActivity(), CameraRepository.RepoCallback {
                 Toast.makeText(
                     this.applicationContext,
                     getString(R.string.qr_not_scanned_toast),
+                    Toast.LENGTH_LONG
+                ).show()
+            } else if (standaloneCamera && TextUtils.isEmpty((editWifiSsid.text))) {
+                Toast.makeText(
+                    this.applicationContext,
+                    getString(R.string.enter_wifi_ssid),
+                    Toast.LENGTH_LONG
+                ).show()
+            } else if (standaloneCamera && TextUtils.isEmpty((editWifiPassword.text))) {
+                Toast.makeText(
+                    this.applicationContext,
+                    getString(R.string.enter_wifi_password),
                     Toast.LENGTH_LONG
                 ).show()
             } else {
@@ -124,17 +158,54 @@ class NewCameraActivity : AppCompatActivity(), CameraRepository.RepoCallback {
                     ).show()
 
                 } else {
-                    val replyIntent = Intent()
+                    val wifiSsid = if (standaloneCamera) {
+                        editWifiSsid.text.toString()
+                    } else {
+                        ""
+                    }
 
-                    val cameraIP = editCameraIPView.text.toString()
-                    replyIntent.putExtra(getString(R.string.intent_extra_camera_name), cameraName)
-                    replyIntent.putExtra(getString(R.string.intent_extra_camera_ip), cameraIP)
-                    replyIntent.putExtra(
-                        getString(R.string.intent_extra_camera_secret),
-                        cameraSecret
-                    )
-                    setResult(Activity.RESULT_OK, replyIntent)
-                    finish()
+                    val wifiPassword = if (standaloneCamera) {
+                        editWifiPassword.text.toString()
+                    } else {
+                        ""
+                    }
+
+                    if (addCamera(cameraName, cameraIp, cameraSecret, standaloneCamera, wifiSsid, wifiPassword)) {
+                        if (standaloneCamera) {
+                            val intent =
+                                Intent(this.applicationContext, InternetConnectActivity::class.java)
+                            intent.putExtra(
+                                getString(R.string.intent_extra_camera_name),
+                                cameraName
+                            )
+                            startForResultRelay.launch(intent)
+                        } else {
+                            if (RustNativeInterface().connect(
+                                    cameraName,
+                                    sharedPref,
+                                    applicationContext,
+                                    true
+                                )) {
+                                val replyIntent = Intent()
+                                replyIntent.putExtra(getString(R.string.intent_extra_camera_name), cameraName)
+                                setResult(Activity.RESULT_OK, replyIntent)
+                                finish()
+                            } else {
+                                Toast.makeText(
+                                    this,
+                                    getString(R.string.add_failed_no_internet),
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    } else {
+                        Log.e(getString(R.string.app_name), "Rust add_camera failed.")
+                        Toast.makeText(
+                            this,
+                            getString(R.string.add_failed),
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
             }
         }
@@ -142,27 +213,90 @@ class NewCameraActivity : AppCompatActivity(), CameraRepository.RepoCallback {
         val buttonQr = findViewById<Button>(R.id.button_qr_code)
         buttonQr.setOnClickListener {
             val intent = Intent(this.applicationContext, QrScannerActivity::class.java)
-            startActivityForResult(intent, QrScannerActivityRequestCode)
+            startForResult.launch(intent)
         }
     }
 
-    override fun resultReady(result: Int) {
-        resultVal = result
-        resultReceived = true
+    private fun addCamera(cameraName: String, cameraIp: String, cameraSecret: ByteArray, standaloneCamera: Boolean, wifiSsid: String, wifiPassword: String): Boolean {
+        Toast.makeText(
+            this,
+            getString(R.string.wait_for_add),
+            Toast.LENGTH_LONG
+        ).show()
+
+        /*
+        if (!bindToWifi(applicationContext)) {
+            Toast.makeText(
+                this,
+                getString(R.string.not_connected_to_hotspot),
+                Toast.LENGTH_LONG
+            ).show()
+            return false
+        }
+        */
+
+        val sharedPref = getSharedPreferences(
+            getString(R.string.shared_preferences),
+            Context.MODE_PRIVATE
+        )
+
+        if (RustNativeInterface().addCamera(
+                cameraName,
+                cameraIp,
+                cameraSecret,
+                standaloneCamera,
+                wifiSsid,
+                wifiPassword,
+                sharedPref!!,
+                applicationContext
+            )) {
+            with(sharedPref.edit()) {
+                putBoolean(
+                    getString(R.string.first_time_connection_done) + "_" + cameraName,
+                    true
+                )
+                apply()
+            }
+            return true
+        }
+
+        return false
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, intentData: Intent?) {
-        super.onActivityResult(requestCode, resultCode, intentData)
+    /*
+    private fun bindToWifi(context: Context): Boolean {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val activeNetwork: Network? = connectivityManager.activeNetwork
 
-        if (requestCode == QrScannerActivityRequestCode && resultCode == Activity.RESULT_OK) {
-            var barcode = intentData?.getByteArrayExtra(getString(R.string.intent_extra_barcode))
+        if (activeNetwork != null) {
+            val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
+            if (capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true) {
+                connectivityManager.bindProcessToNetwork(activeNetwork)
+                return true
+            }
+        }
+        return false
+    }
+    */
+
+    private val startForResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val intentData: Intent? = result.data
+            val barcode = intentData?.getByteArrayExtra(getString(R.string.intent_extra_barcode))
             if (barcode != null) {
                 cameraSecret = barcode
                 qrScanned = true
                 val qrScanStatusTextView = findViewById<TextView>(R.id.qr_scan_status)
                 qrScanStatusTextView.setText(R.string.qr_scanned)
             }
+        }
+    }
+
+    private val startForResultRelay = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // Forward the result back
+            setResult(Activity.RESULT_OK, result.data)
+            finish()
         }
     }
 }

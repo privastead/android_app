@@ -32,6 +32,9 @@
             </intent-filter>
         </activity>
         <activity android:name=".NewCameraActivity" />
+        <activity android:name=".NewCameraSelectorActivity" />
+        <activity android:name=".HotspotConnectActivity" />
+        <activity android:name=".InternetConnectActivity" />
         <activity android:name=".VideoListActivity" />
         <activity android:name=".VideoPlayerActivity"
             android:configChanges="orientation|screenSize"/>

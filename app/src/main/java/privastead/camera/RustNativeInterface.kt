@@ -61,7 +61,7 @@ class RustNativeInterface {
         return RustNative().initialize(serverIP, fcmToken, filesDir, cameraName, firstTime, userCredentials, needNetwork)
     }
 
-    private fun connect(cameraName: String, sharedPref: SharedPreferences, context: Context, needNetwork: Boolean): Boolean {
+    fun connect(cameraName: String, sharedPref: SharedPreferences, context: Context, needNetwork: Boolean): Boolean {
         // FIXME: There's a potential race here for determining the firstTimeConnectionDone.
         // For example, if there's a push notification to retrieve videos when we want to pair
         // a camera, we might end up with two initializations with firstTime=true.
@@ -69,7 +69,7 @@ class RustNativeInterface {
             sharedPref.getBoolean(context.getString(R.string.first_time_connection_done) + "_" + cameraName, false)
 
         if (!firstTimeConnectionDone) {
-            val success = RustNativeInterface().connectCore(cameraName, sharedPref, context, true, true)
+            val success = RustNativeInterface().connectCore(cameraName, sharedPref, context, true, needNetwork)
             
             //FIXME: the goal here was to inform the user that we couldn't connect.
             //But this crashed on the very first call by updateToken at install time.
@@ -116,12 +116,13 @@ class RustNativeInterface {
     }
 
     fun addCamera(cameraName: String, cameraIP: String, cameraSecret: ByteArray,
+                  standaloneCamera: Boolean, wifiSsid: String, wifiPassword: String,
                   sharedPref: SharedPreferences, context: Context): Boolean {
-        if (!connect(cameraName, sharedPref, context, true)) {
+        if (!connect(cameraName, sharedPref, context, false)) {
             return false
         }
 
-        return RustNative().addCamera(cameraName, cameraIP, cameraSecret)
+        return RustNative().addCamera(cameraName, cameraIP, cameraSecret, standaloneCamera, wifiSsid, wifiPassword)
     }
 
     fun receive(cameraName: String, sharedPref: SharedPreferences, context: Context): String {

@@ -25,14 +25,16 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import privastead.camera.databinding.FragmentCameraBinding
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 
 class CameraFragment : Fragment() {
 
@@ -40,11 +42,11 @@ class CameraFragment : Fragment() {
 
     private val binding get() = _binding!!
 
-    private val newCameraActivityRequestCode = 2
     private val cameraViewModel: CameraViewModel by viewModels {
         CameraViewModelFactory((parentFragment?.activity?.application as PrivasteadCameraApplication).repository)
     }
 
+    @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreateView(
             inflater: LayoutInflater,
             container: ViewGroup?,
@@ -65,9 +67,10 @@ class CameraFragment : Fragment() {
         fab.setOnClickListener {
             val intent = Intent(
                 parentFragment?.activity?.applicationContext,
-                NewCameraActivity::class.java
+                NewCameraSelectorActivity::class.java
             )
-            startActivityForResult(intent, newCameraActivityRequestCode)
+
+            startForResult.launch(intent)
         }
 
         cameraViewModel.allCameras.observe(viewLifecycleOwner) { cameras ->
@@ -109,11 +112,9 @@ class CameraFragment : Fragment() {
         _binding = null
     }
 
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, intentData: Intent?) {
-        super.onActivityResult(requestCode, resultCode, intentData)
-
-        if (requestCode == newCameraActivityRequestCode && resultCode == Activity.RESULT_OK) {
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private val startForResult = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
             // Set this shared variable early to prevent the user from clicking on the fab
             // button again while we're processing the request here.
             Toast.makeText(
@@ -122,50 +123,31 @@ class CameraFragment : Fragment() {
                 Toast.LENGTH_LONG
             ).show()
 
-            var cameraName = intentData?.getStringExtra(getString(R.string.intent_extra_camera_name))
-            var cameraIP = intentData?.getStringExtra(getString(R.string.intent_extra_camera_ip))
-            var cameraSecret = intentData?.getByteArrayExtra(getString(R.string.intent_extra_camera_secret))
-            if (cameraName != null && cameraIP != null && cameraSecret != null) {
+            val intentData: Intent? = result.data
+            val cameraName = intentData?.getStringExtra(getString(R.string.intent_extra_camera_name))
+            if (cameraName != null) {
                 val sharedPref = activity?.getSharedPreferences(
                     getString(R.string.shared_preferences),
                     Context.MODE_PRIVATE
                 )
-                GlobalScope.launch {
-                    if (RustNativeInterface().addCamera(
-                            cameraName,
-                            cameraIP,
-                            cameraSecret,
-                            sharedPref!!,
-                            requireParentFragment().requireActivity().applicationContext
-                        )
-                    ) {
-                        val camera = Camera(cameraName)
-                        cameraViewModel.insert(camera)
 
-                        // We also store the set of camera names in sharedPreferences
-                        val cameraSet =
-                            sharedPref.getStringSet(getString(R.string.camera_set), mutableSetOf())
-                                ?.toMutableSet()
-                        with(sharedPref!!.edit()) {
-                            cameraSet?.add(cameraName)
-                            putStringSet(getString(R.string.camera_set), cameraSet)
-                            putBoolean(
-                                getString(R.string.first_time_connection_done) + "_" + cameraName,
-                                true
-                            )
-                            apply()
-                        }
-                    } else {
-                        /* FIXME: can't show Toast here.
-                        Toast.makeText(
-                            parentFragment?.activity?.applicationContext,
-                            getString(R.string.add_failed),
-                            Toast.LENGTH_LONG
-                        ).show()
-                         */
-                    }
+                val camera = Camera(cameraName)
+                cameraViewModel.insert(camera)
+
+                // We also store the set of camera names in sharedPreferences
+                val cameraSet =
+                    sharedPref!!.getStringSet(
+                        getString(R.string.camera_set),
+                        mutableSetOf()
+                    )
+                        ?.toMutableSet()
+                with(sharedPref.edit()) {
+                    cameraSet?.add(cameraName)
+                    putStringSet(getString(R.string.camera_set), cameraSet)
+                    apply()
                 }
             } else {
+                Log.e(getString(R.string.app_name),"Unexpected parameters from NewCameraActivity")
                 Toast.makeText(
                     parentFragment?.activity?.applicationContext,
                     getString(R.string.add_failed),

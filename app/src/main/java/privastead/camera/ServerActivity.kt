@@ -51,15 +51,12 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import privastead.camera.R
 
-class ServerActivity : AppCompatActivity(), CameraRepository.RepoCallback {
-    private var resultReceived: Boolean = false
-    private var resultVal: Int = 0
+class ServerActivity : AppCompatActivity() {
     private var qrScanned: Boolean = false
     private var userCredentials: ByteArray = byteArrayOf()
 
-    private val QrScannerActivityRequestCode = 3
+    private val qrScannerActivityRequestCode = 3
 
     @RequiresApi(Build.VERSION_CODES.Q)
     public override fun onCreate(savedInstanceState: Bundle?) {
@@ -111,20 +108,15 @@ class ServerActivity : AppCompatActivity(), CameraRepository.RepoCallback {
         val buttonQr = findViewById<Button>(R.id.button_qr_code)
         buttonQr.setOnClickListener {
             val intent = Intent(this.applicationContext, QrScannerActivity::class.java)
-            startActivityForResult(intent, QrScannerActivityRequestCode)
+            startActivityForResult(intent, qrScannerActivityRequestCode)
         }
-    }
-
-    override fun resultReady(result: Int) {
-        resultVal = result
-        resultReceived = true
     }
 
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, intentData: Intent?) {
         super.onActivityResult(requestCode, resultCode, intentData)
 
-        if (requestCode == QrScannerActivityRequestCode && resultCode == Activity.RESULT_OK) {
+        if (requestCode == qrScannerActivityRequestCode && resultCode == Activity.RESULT_OK) {
             var barcode = intentData?.getByteArrayExtra(getString(R.string.intent_extra_barcode))
             if (barcode != null) {
                 userCredentials = barcode
