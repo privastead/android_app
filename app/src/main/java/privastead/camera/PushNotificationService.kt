@@ -1,7 +1,7 @@
 package privastead.camera
 
 /*
- * Copyright (C) 2024  Ardalan Amiri Sani
+ * Copyright (C) 2025  Ardalan Amiri Sani
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.util.Base64
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
@@ -73,7 +74,7 @@ class PushNotificationService : FirebaseMessagingService() {
                 // to try to decrypt the message. Only one will succeed.
                 val cameraSet = sharedPref.getStringSet(getString(R.string.camera_set), emptySet())
                 cameraSet?.forEach { name ->
-                    val response = RustNativeInterface().decrypt(name, byteArray, sharedPref, applicationContext)
+                    val response = RustNativeInterface().decryptFcmTimestamp(name, byteArray, sharedPref, applicationContext)
                     if (response == "Download") {
                         // In this case, the camera just sent a notification for us to start downloading.
 
@@ -111,10 +112,13 @@ class PushNotificationService : FirebaseMessagingService() {
                         if (needNotification == true) {
                             //FIXME: does this need to be called every time?
                             createNotificationChannel()
-                            val cameraName = response.split("_").toTypedArray().get(0)
-                            val timestamp = response.split("_").toTypedArray().get(1)
-                            sendNotification(cameraName, timestamp)
-                            addPendingToRepository(cameraName, timestamp)
+                            //val cameraName = response.split("_").toTypedArray().get(0)
+                            //val timestamp = response.split("_").toTypedArray().get(1)
+                            //sendNotification(cameraName, timestamp)
+                            //addPendingToRepository(cameraName, timestamp)
+                            val timestamp = response
+                            sendNotification(name, timestamp)
+                            addPendingToRepository(name, timestamp)
                         }
                     }
                 }
@@ -126,7 +130,7 @@ class PushNotificationService : FirebaseMessagingService() {
 
     private fun addPendingToRepository(cameraName: String, timestamp: String) {
         val repository = (applicationContext as PrivasteadCameraApplication).repository
-        val videoName = "video_" + cameraName + "_" + timestamp + ".mp4"
+        val videoName = "video_" + timestamp + ".mp4"
         val video = Video(cameraName, videoName, false, true)
         repository.insertVideo(video)
     }
@@ -231,23 +235,23 @@ class PushNotificationService : FirebaseMessagingService() {
         }
 
         // First, we'll try to update here
-        val cameraSet = sharedPref.getStringSet(getString(R.string.camera_set), emptySet())
-        var allUpdatesSuccessful = true
-        cameraSet?.forEach { name ->
-            if (!RustNativeInterface().updateToken(name, token, sharedPref, applicationContext)) {
-                allUpdatesSuccessful = false
+        val result = HttpClient.uploadFcmToken(this, sharedPref, token)
+        result.fold(
+            onSuccess = {
+                with(sharedPref.edit()) {
+                    putBoolean(getString(R.string.need_update_fcm_token), false)
+                    apply()
+                }
+            },
+            onFailure = { error ->
+                Log.e(getString(R.string.app_name), error.toString())
+                // We failed to update. Let's have it be updated on next launch.
+                with(sharedPref.edit()) {
+                    putBoolean(getString(R.string.need_update_fcm_token), true)
+                    apply()
+                }
             }
-        }
-        if (allUpdatesSuccessful) {
-            wakeLock.release()
-            return
-        }
-
-        // We failed to update. Let's have it be updated on next launch.
-        with(sharedPref.edit()) {
-            putBoolean(getString(R.string.need_update_fcm_token), true)
-            apply()
-        }
+        )
 
         wakeLock.release()
     }

@@ -96,7 +96,9 @@
     <string name="server_instructions">This app receives encrypted videos from your camera through an untrusted server. Please provide the server IP address and the credentials to access the server using a QR code.</string>
     <string name="save_button_text">Save</string>
     <string name="server_qr_not_scanned_toast">"Scan server's QR code first!"</string>
-    <string name="user_credentials">UserCredentials</string>
+    <string name="server_qr_not_valid">"Invalid server QR code!"</string>
+    <string name="server_username">ServerUsername</string>
+    <string name="server_password">ServerPassword</string>
     <string name="camera_set">CameraSet</string>
 
     <!-- Shared Preferences -->
@@ -114,7 +116,6 @@
     <string name="save_video_text">Download</string>
     <string name="video_downloaded">Video download successful!</string>
     <string name="downloading_motion_videos">DownloadingMotionVideos</string>
-    <string name="livestream_end_processed">LivestreamEndProcessed</string>
     <string name="download_confirmation_text">This will save the video to your gallery. Are you sure you want to proceed?</string>
 
     <!-- Worker -->

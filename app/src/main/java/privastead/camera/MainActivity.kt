@@ -1,7 +1,7 @@
 package privastead.camera
 
 /*
- * Copyright (C) 2024  Ardalan Amiri Sani
+ * Copyright (C) 2025  Ardalan Amiri Sani
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,8 +75,10 @@ class MainActivity : AppCompatActivity() {
         }
          */
 
-        val userCredentials = sharedPref.getString(getString(R.string.user_credentials), "Error")
-        if (userCredentials == "Error") {
+        val serverIp = sharedPref.getString(getString(R.string.saved_ip), "Error")
+        val serverUsername = sharedPref.getString(getString(R.string.server_username), "Error")
+        val serverPassword = sharedPref.getString(getString(R.string.server_password), "Error")
+        if (serverIp == "Error" || serverUsername == "Error" || serverPassword == "Error") {
             serverActivityLaunched = true
             val intent = Intent(this, ServerActivity::class.java)
             startActivityForResult(intent, serverActivityRequestCode)

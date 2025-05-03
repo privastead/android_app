@@ -1,7 +1,7 @@
 package privastead.camera
 
 /*
- * Copyright (C) 2024  Ardalan Amiri Sani
+ * Copyright (C) 2025  Ardalan Amiri Sani
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,30 +52,48 @@ class DownloadWorker(context: Context, params: WorkerParameters) : Worker(contex
         return Result.success()
     }
 
-    private fun receive(cameraName: String): String {
-        val sharedPref = applicationContext.getSharedPreferences(applicationContext.getString(R.string.shared_preferences), Context.MODE_PRIVATE)
-        return RustNativeInterface().receive(cameraName, sharedPref, applicationContext)
-    }
-
     private fun retrieveVideos(cameraName: String) {
         val repository = (applicationContext as PrivasteadCameraApplication).repository
 
-        var response = receive(cameraName)
-        if (response == "None" || response == "Error") {
-            return
-        } else {
-            val videoNames = response.split(",").toTypedArray()
-            for (videoName in videoNames) {
-                val videoCameraName = videoName.split("_").toTypedArray().get(1)
-                if (videoCameraName != cameraName) {
-                    Log.e(applicationContext.getString(R.string.app_name), applicationContext.getString(R.string.error_unexpected_camera_name))
+        val sharedPref = applicationContext.getSharedPreferences(applicationContext.getString(R.string.shared_preferences), Context.MODE_PRIVATE)
+        var epoch = sharedPref.getLong("epoch$cameraName", 2)
+
+        while (true) {
+            val result = HttpClient.downloadVideo(
+                applicationContext,
+                sharedPref,
+                cameraName,
+                epoch,
+                "encVideo$epoch"
+            )
+            result.fold(
+                onSuccess = { file ->
+                    val decFileName = RustNativeInterface().decryptVideo(
+                        cameraName, file.name, sharedPref,
+                        applicationContext,
+                    )
+                    file.delete()
+
+                    if (decFileName != "Error") {
+                        //add to database
+                        val videoPending = Video(cameraName, decFileName, false, true)
+                        repository.deleteVideo(videoPending)
+                        val video = Video(cameraName, decFileName, true, true)
+                        repository.insertVideo(video)
+
+                        //advance the epoch
+                        with(sharedPref.edit()) {
+                            putLong("epoch$cameraName", epoch + 1)
+                            apply()
+                        }
+                    }
+
+                    epoch += 1;
+                },
+                onFailure = { error ->
                     return
                 }
-                val videoPending = Video(cameraName, videoName, false, true)
-                repository.deleteVideo(videoPending)
-                val video = Video(cameraName, videoName, true, true)
-                repository.insertVideo(video)
-            }
+            )
         }
     }
 }

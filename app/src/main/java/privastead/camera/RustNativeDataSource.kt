@@ -1,7 +1,7 @@
 package privastead.camera
 
 /*
- * Copyright (C) 2024  Ardalan Amiri Sani
+ * Copyright (C) 2025  Ardalan Amiri Sani
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,6 +40,8 @@ class RustNativeDataSource(isNetwork: Boolean, cam: String,
     private lateinit var outputStream: FileOutputStream
     private var needToCreateFile: Boolean = false
     private var needToCloseFile: Boolean = false
+    private var internalBuffer: ByteArray = ByteArray(0)
+    private var chunkNumber: ULong = 1u
 
     @Throws(IOException::class)
     override fun open(dataSpec: DataSpec): Long {
@@ -48,32 +50,46 @@ class RustNativeDataSource(isNetwork: Boolean, cam: String,
             Thread.sleep(1000)
         }
 
-        var connected = false
+        val result = HttpClient.livestreamStart(context, sharedPref, camera)
 
-        if (!sharedPref.getBoolean(context.getString(R.string.livestream_end_processed), true)) {
-            // Clean up the last session if we didn't get a chance to do that on close()
-            RustNativeInterface().livestreamEnd(camera, sharedPref, context)
-            connected = true
-        }
-
-        with(sharedPref.edit()) {
-            putBoolean(context.getString(R.string.livestream_end_processed), false)
-            apply()
-        }
-
-        if (connected) {
-            if (!RustNativeInterface().livestreamStartNoConnect(camera)) {
+        result.fold(
+            onSuccess = { _ ->
+                retrieveAndApplyCommitMsg(context, sharedPref, camera)
+                needToCreateFile = true
+                return C.LENGTH_UNSET.toLong()
+            },
+            onFailure = { _ ->
+                // We might have failed because of an un-retrieved commit msg.
+                // If so, retrieve it now, otherwise we will always get the same error
+                retrieveAndApplyCommitMsg(context, sharedPref, camera)
                 throw IOException("Error: livestreamStart failed!")
             }
-        } else {
-            if (!RustNativeInterface().livestreamStart(camera, sharedPref, context)) {
-                throw IOException("Error: livestreamStart failed!")
-            }
+        )
+    }
+
+    @Throws(IOException::class)
+    private fun retrieveAndApplyCommitMsg(
+        context: Context,
+        sharedPref: SharedPreferences,
+        cameraName: String
+    ) {
+        while (true) {
+            val result = HttpClient.livestreamRetrieve(context, sharedPref, cameraName, 0u)
+            result.fold(
+                onSuccess = { commitMsg ->
+                    RustNativeInterface().livestreamUpdate(
+                        cameraName,
+                        commitMsg,
+                        sharedPref,
+                        context
+                    )
+                    return
+                },
+                onFailure = { _ ->
+                }
+            )
+            Thread.sleep(1000)
         }
-
-        needToCreateFile = true
-
-        return C.LENGTH_UNSET.toLong()
     }
 
     override fun getUri(): Uri? {
@@ -83,11 +99,28 @@ class RustNativeDataSource(isNetwork: Boolean, cam: String,
 
     @Throws(IOException::class)
     override fun read(buffer: ByteArray, offset: Int, readLength: Int): Int {
-        var videoBuffer = RustNativeInterface().livestreamReadNoConnect(camera, readLength)
-        var videoBufferLen = videoBuffer.size
-        if (videoBufferLen == 0) {
+        if (internalBuffer.size < readLength) {
+            val result = HttpClient.livestreamRetrieve(context, sharedPref, camera, chunkNumber)
+            result.fold(
+                onSuccess = { encData ->
+                    val decData = RustNativeInterface().livestreamDecrypt(
+                        camera,
+                        encData,
+                        sharedPref,
+                        context
+                    )
+                    internalBuffer = internalBuffer.plus(decData)
+                    if (!needToCreateFile) {
+                        outputStream.write(decData)
+                    }
+                    chunkNumber += 1u
+                },
+                onFailure = { _ ->
+                }
+            )
             return 0
         }
+
 
         if (needToCreateFile) {
             // Create directory if it doesn't exist
@@ -96,11 +129,12 @@ class RustNativeDataSource(isNetwork: Boolean, cam: String,
 
             val timestamp: Long = System.currentTimeMillis() / 1000
             val filePath = context.getFilesDir().toString() + "/camera_dir_" + camera +
-                    "/video_" + camera + "_" + timestamp + ".mp4"
+                    "/video_" + timestamp + ".mp4"
             outputStream = FileOutputStream(filePath)
+            outputStream.write(internalBuffer)
 
             val repository = (context as PrivasteadCameraApplication).repository
-            val videoName = "video_" + camera + "_" + timestamp + ".mp4"
+            val videoName = "video_" + timestamp + ".mp4"
             val video = Video(camera, videoName, true, false)
             repository.insertVideo(video)
 
@@ -108,11 +142,12 @@ class RustNativeDataSource(isNetwork: Boolean, cam: String,
             needToCloseFile = true
         }
 
-        outputStream.write(videoBuffer)
 
-        videoBuffer.copyInto(buffer, offset, 0, videoBufferLen)
 
-        return videoBufferLen
+        internalBuffer.copyInto(buffer, offset, 0, readLength)
+        internalBuffer = internalBuffer.sliceArray(readLength until internalBuffer.size)
+
+        return readLength
     }
 
     @Throws(IOException::class)
@@ -120,13 +155,6 @@ class RustNativeDataSource(isNetwork: Boolean, cam: String,
         if (needToCloseFile) {
             outputStream.close()
             needToCloseFile = false
-        }
-
-        RustNativeInterface().livestreamEndNoConnect(camera)
-
-        with(sharedPref.edit()) {
-            putBoolean(context.getString(R.string.livestream_end_processed), true)
-            apply()
         }
     }
 }

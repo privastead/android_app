@@ -1,7 +1,7 @@
 package privastead.camera
 
 /*
- * Copyright (C) 2024  Ardalan Amiri Sani
+ * Copyright (C) 2025  Ardalan Amiri Sani
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,8 @@ import java.io.File
 class RustNativeInterface {
 
     //FIXME: we can get sharedPref from context: val sharedPref = context.getSharedPreferences(context.getString(R.string.shared_preferences), Context.MODE_PRIVATE)
-    private fun connectCore(cameraName: String, sharedPref: SharedPreferences, context: Context, firstTime: Boolean, needNetwork: Boolean): Boolean {
+    private fun initCore(cameraName: String, sharedPref: SharedPreferences, context: Context, firstTime: Boolean): Boolean {
+        /*
         var serverIP = sharedPref.getString(context.getString(R.string.saved_ip), "Error")
         if (serverIP == null || serverIP == "Error") {
             Log.e(context.getString(R.string.app_name), "Error: Failed to retrieve the server IP address")
@@ -46,6 +47,7 @@ class RustNativeInterface {
         }
 
         var userCredentials = Base64.decode(userCredentialsString, Base64.DEFAULT)
+         */
 
         var filesDir = context.getFilesDir().toString() + "/camera_dir_" + cameraName
 
@@ -58,10 +60,10 @@ class RustNativeInterface {
             }
         }
         
-        return RustNative().initialize(serverIP, fcmToken, filesDir, cameraName, firstTime, userCredentials, needNetwork)
+        return RustNative().initialize(filesDir, cameraName, firstTime)
     }
 
-    fun connect(cameraName: String, sharedPref: SharedPreferences, context: Context, needNetwork: Boolean): Boolean {
+    fun init(cameraName: String, sharedPref: SharedPreferences, context: Context): Boolean {
         // FIXME: There's a potential race here for determining the firstTimeConnectionDone.
         // For example, if there's a push notification to retrieve videos when we want to pair
         // a camera, we might end up with two initializations with firstTime=true.
@@ -69,7 +71,7 @@ class RustNativeInterface {
             sharedPref.getBoolean(context.getString(R.string.first_time_connection_done) + "_" + cameraName, false)
 
         if (!firstTimeConnectionDone) {
-            val success = RustNativeInterface().connectCore(cameraName, sharedPref, context, true, needNetwork)
+            val success = initCore(cameraName, sharedPref, context, true)
             
             //FIXME: the goal here was to inform the user that we couldn't connect.
             //But this crashed on the very first call by updateToken at install time.
@@ -88,12 +90,12 @@ class RustNativeInterface {
 
             return success
         } else {
-            return connectCore(cameraName, sharedPref, context, false, needNetwork)
+            return initCore(cameraName, sharedPref, context, false)
         }
     }
 
     fun deregister(cameraName: String, sharedPref: SharedPreferences, context: Context): Boolean {
-        if (!connect(cameraName, sharedPref, context, true)) {
+        if (!init(cameraName, sharedPref, context)) {
             return false
         }
 
@@ -107,65 +109,61 @@ class RustNativeInterface {
         return true
     }
 
-    fun updateToken(cameraName: String, token: String, sharedPref: SharedPreferences, context: Context): Boolean {
-        if (!connect(cameraName, sharedPref, context, true)) {
-            return false
-        }
-
-        return RustNative().updateToken(token, cameraName)
-    }
-
     fun addCamera(cameraName: String, cameraIP: String, cameraSecret: ByteArray,
                   standaloneCamera: Boolean, wifiSsid: String, wifiPassword: String,
                   sharedPref: SharedPreferences, context: Context): Boolean {
-        if (!connect(cameraName, sharedPref, context, false)) {
+        if (!init(cameraName, sharedPref, context)) {
             return false
         }
 
         return RustNative().addCamera(cameraName, cameraIP, cameraSecret, standaloneCamera, wifiSsid, wifiPassword)
     }
 
-    fun receive(cameraName: String, sharedPref: SharedPreferences, context: Context): String {
-        if (!connect(cameraName, sharedPref, context, true)) {
+    fun decryptVideo(cameraName: String, encVideoFileName: String, sharedPref: SharedPreferences, context: Context): String {
+        if (!init(cameraName, sharedPref, context)) {
             return "Error"
         }
 
-        return RustNative().receive(cameraName)
+        return RustNative().decryptVideo(cameraName, encVideoFileName)
     }
 
-    fun decrypt(cameraName: String, msg: ByteArray, sharedPref: SharedPreferences, context: Context): String {
-        if (!connect(cameraName, sharedPref, context, false)) {
+    fun decryptFcmTimestamp(cameraName: String, msg: ByteArray, sharedPref: SharedPreferences, context: Context): String {
+        if (!init(cameraName, sharedPref, context)) {
             return "Error"
         }
 
-        return RustNative().decrypt(cameraName, msg)
+        return RustNative().decryptFcmTimestamp(cameraName, msg)
     }
 
-    fun livestreamStart(cameraName: String, sharedPref: SharedPreferences, context: Context): Boolean {
-        if (!connect(cameraName, sharedPref, context, true)) {
+    fun getMotionGroupName(cameraName: String, sharedPref: SharedPreferences, context: Context): String {
+        if (!init(cameraName, sharedPref, context)) {
+            return "Error"
+        }
+
+        return RustNative().getMotionGroupName(cameraName)
+    }
+
+    fun getLivestreamGroupName(cameraName: String, sharedPref: SharedPreferences, context: Context): String {
+        if (!init(cameraName, sharedPref, context)) {
+            return "Error"
+        }
+
+        return RustNative().getLivestreamGroupName(cameraName)
+    }
+
+    fun livestreamDecrypt(cameraName: String, encData: ByteArray, sharedPref: SharedPreferences, context: Context): ByteArray {
+        if (!init(cameraName, sharedPref, context)) {
+            return ByteArray(0)
+        }
+
+        return RustNative().livestreamDecrypt(cameraName, encData)
+    }
+
+    fun livestreamUpdate(cameraName: String, commitMsg: ByteArray, sharedPref: SharedPreferences, context: Context): Boolean {
+        if (!init(cameraName, sharedPref, context)) {
             return false
         }
 
-        return RustNative().livestreamStart(cameraName)
-    }
-
-    fun livestreamStartNoConnect(cameraName: String): Boolean {
-        return RustNative().livestreamStart(cameraName)
-    }
-
-    fun livestreamEnd(cameraName: String, sharedPref: SharedPreferences, context: Context): Boolean {
-        if (!connect(cameraName, sharedPref, context, true)) {
-            return false
-        }
-
-        return RustNative().livestreamEnd(cameraName)
-    }
-
-    fun livestreamEndNoConnect(cameraName: String): Boolean {
-        return RustNative().livestreamEnd(cameraName)
-    }
-
-    fun livestreamReadNoConnect(cameraName: String, len: Int): ByteArray {
-        return RustNative().livestreamRead(cameraName, len)
+        return RustNative().livestreamUpdate(cameraName, commitMsg)
     }
 }

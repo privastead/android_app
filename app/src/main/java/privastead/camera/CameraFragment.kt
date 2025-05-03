@@ -1,7 +1,7 @@
 package privastead.camera
 
 /*
- * Copyright (C) 2024  Ardalan Amiri Sani
+ * Copyright (C) 2025  Ardalan Amiri Sani
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,32 +76,32 @@ class CameraFragment : Fragment() {
         cameraViewModel.allCameras.observe(viewLifecycleOwner) { cameras ->
             cameras.let { adapter.submitList(it) }
 
-            // Do the FCM update only after we have a camera paired.
-            // If we call RustNativeInterface().initialize(..., first_time = false) before
-            // any camera is paired, the native code will crash since it will try to retrieve
-            // non-existing state from the file system.
-            if (!cameras.isEmpty()) {
-                var needFcmUpdate =
-                    sharedPref.getBoolean(getString(R.string.need_update_fcm_token), false)
+            var needFcmUpdate =
+                sharedPref.getBoolean(getString(R.string.need_update_fcm_token), false)
 
-                if (needFcmUpdate) {
-                    sharedPref.getString(getString(R.string.fcm_token), "")
-                        ?.let {
-                            val cameraSet = sharedPref.getStringSet(getString(R.string.camera_set), emptySet())
-                            cameraSet?.forEach { name ->
-                                RustNativeInterface().updateToken(
-                                    name, it, sharedPref,
-                                    requireParentFragment().requireActivity().applicationContext
-                                )
+            if (needFcmUpdate) {
+                sharedPref.getString(getString(R.string.fcm_token), "")
+                    ?.let { token ->
+                        Thread {
+                            val result = parentFragment?.activity?.applicationContext?.let { ctx ->
+                                HttpClient.uploadFcmToken(
+                                    ctx, sharedPref, token)
                             }
-                        }
-                    with(sharedPref.edit()) {
-                        //FIXME: we don't check the return value from updateToken. What if it failed?
-                        putBoolean(getString(R.string.need_update_fcm_token), false)
-                        apply()
+                            result?.fold(
+                                onSuccess = {
+                                    with(sharedPref.edit()) {
+                                        putBoolean(getString(R.string.need_update_fcm_token), false)
+                                        apply()
+                                    }
+                                },
+                                onFailure = { error ->
+                                    Log.e(getString(R.string.app_name), error.toString())
+                                }
+                            )
+                        }.start()
                     }
-                }
             }
+
         }
 
         return root
@@ -144,6 +144,9 @@ class CameraFragment : Fragment() {
                 with(sharedPref.edit()) {
                     cameraSet?.add(cameraName)
                     putStringSet(getString(R.string.camera_set), cameraSet)
+                    // FIXME: We need unsigned 64 (ULong) but there are not sharedPreferences API for that.
+                    // Long gives us 63 bits unsigned and that should be big enough.
+                    putLong("epoch$cameraName", 2)
                     apply()
                 }
             } else {

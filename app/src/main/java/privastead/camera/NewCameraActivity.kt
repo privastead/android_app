@@ -1,7 +1,7 @@
 package privastead.camera
 
 /*
- * Copyright (C) 2024  Ardalan Amiri Sani
+ * Copyright (C) 2025  Ardalan Amiri Sani
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -180,11 +180,11 @@ class NewCameraActivity : AppCompatActivity() {
                             )
                             startForResultRelay.launch(intent)
                         } else {
-                            if (RustNativeInterface().connect(
+                            // FIXME: do we still need to call init here?
+                            if (RustNativeInterface().init(
                                     cameraName,
                                     sharedPref,
                                     applicationContext,
-                                    true
                                 )) {
                                 val replyIntent = Intent()
                                 replyIntent.putExtra(getString(R.string.intent_extra_camera_name), cameraName)

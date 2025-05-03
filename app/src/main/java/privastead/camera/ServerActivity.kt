@@ -1,7 +1,7 @@
 package privastead.camera
 
 /*
- * Copyright (C) 2024  Ardalan Amiri Sani
+ * Copyright (C) 2025  Ardalan Amiri Sani
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,6 +45,7 @@ import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Base64
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -89,19 +90,34 @@ class ServerActivity : AppCompatActivity() {
                 ).show()
             } else {
                 val serverIP = editServerIPView.text.toString()
-                val userCredentialsString: String = Base64.encodeToString(userCredentials, Base64.DEFAULT)
+                val userCredentialsString: String = String(userCredentials, Charsets.UTF_8)
+                if (userCredentialsString.length != 28) {
+                    Toast.makeText(
+                        this.applicationContext,
+                        getString(R.string.server_qr_not_valid),
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    val serverUsername = userCredentialsString.substring(0, 14)
+                    val serverPassword = userCredentialsString.substring(14, 28)
 
-                val sharedPref = getSharedPreferences(getString(R.string.shared_preferences), Context.MODE_PRIVATE)
+                    val sharedPref = getSharedPreferences(
+                        getString(R.string.shared_preferences),
+                        Context.MODE_PRIVATE
+                    )
 
-                with(sharedPref.edit()) {
-                    putString(getString(R.string.saved_ip), serverIP)
-                    putString(getString(R.string.user_credentials), userCredentialsString)
-                    apply()
+                    with(sharedPref.edit()) {
+                        putString(getString(R.string.saved_ip), serverIP)
+                        putString(getString(R.string.server_username), serverUsername)
+                        putString(getString(R.string.server_password), serverPassword)
+                        putBoolean(getString(R.string.need_update_fcm_token), true)
+                        apply()
+                    }
+
+                    val replyIntent = Intent()
+                    setResult(Activity.RESULT_OK, replyIntent)
+                    finish()
                 }
-
-                val replyIntent = Intent()
-                setResult(Activity.RESULT_OK, replyIntent)
-                finish()
             }
         }
 

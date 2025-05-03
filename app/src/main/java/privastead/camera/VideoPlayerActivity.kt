@@ -1,7 +1,7 @@
 package privastead.camera
 
 /*
- * Copyright (C) 2024  Ardalan Amiri Sani
+ * Copyright (C) 2025  Ardalan Amiri Sani
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -160,7 +160,7 @@ class VideoPlayerActivity : Activity() {
 
         //FIXME: we don't need the URI
         val mediaSource = ProgressiveMediaSource.Factory(mediaDataSourceFactory)
-            .createMediaSource(MediaItem.fromUri("tcp://192.168.0.130:8888"))
+            .createMediaSource(MediaItem.fromUri("tcp://0.0.0.0:0"))
 
         val mediaSourceFactory = DefaultMediaSourceFactory(mediaDataSourceFactory)
 

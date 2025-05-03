@@ -1,7 +1,7 @@
 package privastead.camera
 
 /*
- * Copyright (C) 2024  Ardalan Amiri Sani
+ * Copyright (C) 2025  Ardalan Amiri Sani
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -136,7 +136,7 @@ class VideoListAdapter : ListAdapter<Video, VideoViewHolder>(VIDEOS_COMPARATOR) 
         }
 
         fun bind(text: String?, received: Boolean, motion: Boolean) {
-            var time_string = text?.split("_")?.toTypedArray()?.get(2)
+            var time_string = text?.split("_")?.toTypedArray()?.get(1)
                 ?.split(".")?.toTypedArray()?.get(0)
             var time_long: Long? = time_string?.toLongOrNull()
             val date = time_long?.let { convertTimeToDate(it * 1000L) }
