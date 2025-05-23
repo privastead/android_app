@@ -23,9 +23,14 @@ import android.net.Uri
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.upstream.BaseDataSource
 import com.google.android.exoplayer2.upstream.DataSpec
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.LinkedBlockingQueue
 
 // FIXME: we have one potential race condition here.
 // if we receive a motion video when we're starting the livestream,
@@ -40,8 +45,31 @@ class RustNativeDataSource(isNetwork: Boolean, cam: String,
     private lateinit var outputStream: FileOutputStream
     private var needToCreateFile: Boolean = false
     private var needToCloseFile: Boolean = false
+    private var needToDownload: Boolean = true
     private var internalBuffer: ByteArray = ByteArray(0)
     private var chunkNumber: ULong = 1u
+
+    private fun startFetchingChunks() {
+        CoroutineScope(Dispatchers.IO).launch {
+            while (needToDownload) {
+                val result = HttpClient.livestreamRetrieve(context, sharedPref, camera, chunkNumber)
+                result.fold(
+                    onSuccess = { encData ->
+                        val decData = RustNativeInterface().livestreamDecrypt(
+                            camera,
+                            encData,
+                            sharedPref,
+                            context
+                        )
+                        internalBuffer = internalBuffer.plus(decData)
+                        chunkNumber += 1u
+                    },
+                    onFailure = { _ ->
+                    }
+                )
+            }
+        }
+    }
 
     @Throws(IOException::class)
     override fun open(dataSpec: DataSpec): Long {
@@ -56,6 +84,7 @@ class RustNativeDataSource(isNetwork: Boolean, cam: String,
             onSuccess = { _ ->
                 retrieveAndApplyCommitMsg(context, sharedPref, camera)
                 needToCreateFile = true
+                startFetchingChunks()
                 return C.LENGTH_UNSET.toLong()
             },
             onFailure = { _ ->
@@ -99,62 +128,46 @@ class RustNativeDataSource(isNetwork: Boolean, cam: String,
 
     @Throws(IOException::class)
     override fun read(buffer: ByteArray, offset: Int, readLength: Int): Int {
-        if (internalBuffer.size < readLength) {
-            val result = HttpClient.livestreamRetrieve(context, sharedPref, camera, chunkNumber)
-            result.fold(
-                onSuccess = { encData ->
-                    val decData = RustNativeInterface().livestreamDecrypt(
-                        camera,
-                        encData,
-                        sharedPref,
-                        context
-                    )
-                    internalBuffer = internalBuffer.plus(decData)
-                    if (!needToCreateFile) {
-                        outputStream.write(decData)
-                    }
-                    chunkNumber += 1u
-                },
-                onFailure = { _ ->
-                }
-            )
-            return 0
+        if (internalBuffer.size >= readLength) {
+            internalBuffer.copyInto(buffer, offset, 0, readLength)
+
+            if (needToCreateFile) {
+                // Create directory if it doesn't exist
+                val directory = File(context.getFilesDir().toString() + "/camera_dir_" + camera)
+                directory.mkdirs()
+
+                val timestamp: Long = System.currentTimeMillis() / 1000
+                val filePath = context.getFilesDir().toString() + "/camera_dir_" + camera +
+                        "/video_" + timestamp + ".mp4"
+                outputStream = FileOutputStream(filePath)
+
+                val repository = (context as PrivasteadCameraApplication).repository
+                val videoName = "video_" + timestamp + ".mp4"
+                val video = Video(camera, videoName, true, false)
+                repository.insertVideo(video)
+
+                needToCreateFile = false
+                needToCloseFile = true
+
+            }
+
+            outputStream.write(internalBuffer.sliceArray(0 until readLength))
+            internalBuffer = internalBuffer.sliceArray(readLength until internalBuffer.size)
+
+            return readLength
         }
 
-
-        if (needToCreateFile) {
-            // Create directory if it doesn't exist
-            val directory = File(context.getFilesDir().toString() + "/camera_dir_" + camera)
-            directory.mkdirs()
-
-            val timestamp: Long = System.currentTimeMillis() / 1000
-            val filePath = context.getFilesDir().toString() + "/camera_dir_" + camera +
-                    "/video_" + timestamp + ".mp4"
-            outputStream = FileOutputStream(filePath)
-            outputStream.write(internalBuffer)
-
-            val repository = (context as PrivasteadCameraApplication).repository
-            val videoName = "video_" + timestamp + ".mp4"
-            val video = Video(camera, videoName, true, false)
-            repository.insertVideo(video)
-
-            needToCreateFile = false
-            needToCloseFile = true
-        }
-
-
-
-        internalBuffer.copyInto(buffer, offset, 0, readLength)
-        internalBuffer = internalBuffer.sliceArray(readLength until internalBuffer.size)
-
-        return readLength
+        return 0
     }
 
     @Throws(IOException::class)
     override fun close() {
+        needToDownload = false
         if (needToCloseFile) {
             outputStream.close()
             needToCloseFile = false
         }
+
+        HttpClient.livestreamEnd(context, sharedPref, camera)
     }
 }

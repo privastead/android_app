@@ -197,16 +197,68 @@ object HttpClient {
             .addHeader("Authorization", basicAuthHeader)
             .build()
 
+        val delRequest = Request.Builder()
+            .url("http://$serverIp:8080/$cameraLivestreamGroupName/$chunkNumber")
+            .addHeader("Authorization", basicAuthHeader)
+            .delete()
+            .build()
+
         return try {
             val response = client.newCall(request).execute()
             if (!response.isSuccessful) {
                 return Result.failure(Exception("Failed to fetch data: ${response.code} ${response.message}"))
             }
 
+            val delResponse = client.newCall(delRequest).execute()
+            if (!delResponse.isSuccessful) {
+                return Result.failure(Exception("Failed to delete video from the server: ${response.code} ${response.message}"))
+            }
+
             val byteArray = response.body?.bytes()
                 ?: return Result.failure(Exception("Response body is null"))
 
             Result.success(byteArray)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // FIXME: shares a lot of code with livestreamStart
+    fun livestreamEnd(
+        context: Context,
+        sharedPref: SharedPreferences,
+        cameraName: String
+    ): Result<Unit> {
+        val serverIp = sharedPref.getString(context.getString(R.string.saved_ip), null)
+            ?: return Result.failure(Exception("Failed to retrieve the server IP address"))
+
+        val username = sharedPref.getString(context.getString(R.string.server_username), null)
+            ?: return Result.failure(Exception("Failed to retrieve the server username"))
+
+        val password = sharedPref.getString(context.getString(R.string.server_password), null)
+            ?: return Result.failure(Exception("Failed to retrieve the server password"))
+
+        val cameraLivestreamGroupName = RustNativeInterface().getLivestreamGroupName(cameraName, sharedPref, context)
+
+        val client = OkHttpClient()
+
+        val credentials = "$username:$password"
+        val basicAuthHeader = "Basic " + Base64.encodeToString(credentials.toByteArray(), Base64.NO_WRAP)
+
+        val requestBody = "".toRequestBody("text/plain".toMediaType())
+
+        val request = Request.Builder()
+            .url("http://$serverIp:8080/livestream_end/$cameraLivestreamGroupName")
+            .addHeader("Authorization", basicAuthHeader)
+            .post(requestBody)
+            .build()
+
+        return try {
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) {
+                return Result.failure(Exception("Failed to send data: ${response.code} ${response.message}"))
+            }
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
