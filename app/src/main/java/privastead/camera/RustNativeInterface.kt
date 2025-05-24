@@ -151,12 +151,12 @@ class RustNativeInterface {
         return RustNative().getLivestreamGroupName(cameraName)
     }
 
-    fun livestreamDecrypt(cameraName: String, encData: ByteArray, sharedPref: SharedPreferences, context: Context): ByteArray {
+    fun livestreamDecrypt(cameraName: String, encData: ByteArray, expectedChunkNumber: Long, sharedPref: SharedPreferences, context: Context): ByteArray {
         if (!init(cameraName, sharedPref, context)) {
             return ByteArray(0)
         }
 
-        return RustNative().livestreamDecrypt(cameraName, encData)
+        return RustNative().livestreamDecrypt(cameraName, encData, expectedChunkNumber)
     }
 
     fun livestreamUpdate(cameraName: String, commitMsg: ByteArray, sharedPref: SharedPreferences, context: Context): Boolean {

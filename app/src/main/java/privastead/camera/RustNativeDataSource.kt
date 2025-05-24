@@ -47,7 +47,7 @@ class RustNativeDataSource(isNetwork: Boolean, cam: String,
     private var needToCloseFile: Boolean = false
     private var needToDownload: Boolean = true
     private var internalBuffer: ByteArray = ByteArray(0)
-    private var chunkNumber: ULong = 1u
+    private var chunkNumber: Long = 1
 
     private fun startFetchingChunks() {
         CoroutineScope(Dispatchers.IO).launch {
@@ -58,11 +58,12 @@ class RustNativeDataSource(isNetwork: Boolean, cam: String,
                         val decData = RustNativeInterface().livestreamDecrypt(
                             camera,
                             encData,
+                            chunkNumber,
                             sharedPref,
                             context
                         )
                         internalBuffer = internalBuffer.plus(decData)
-                        chunkNumber += 1u
+                        chunkNumber += 1
                     },
                     onFailure = { _ ->
                     }
@@ -103,7 +104,7 @@ class RustNativeDataSource(isNetwork: Boolean, cam: String,
         cameraName: String
     ) {
         while (true) {
-            val result = HttpClient.livestreamRetrieve(context, sharedPref, cameraName, 0u)
+            val result = HttpClient.livestreamRetrieve(context, sharedPref, cameraName, 0)
             result.fold(
                 onSuccess = { commitMsg ->
                     RustNativeInterface().livestreamUpdate(

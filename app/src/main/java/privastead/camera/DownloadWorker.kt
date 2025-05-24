@@ -80,15 +80,20 @@ class DownloadWorker(context: Context, params: WorkerParameters) : Worker(contex
                         repository.deleteVideo(videoPending)
                         val video = Video(cameraName, decFileName, true, true)
                         repository.insertVideo(video)
-
-                        //advance the epoch
-                        with(sharedPref.edit()) {
-                            putLong("epoch$cameraName", epoch + 1)
-                            apply()
-                        }
+                    } else {
+                        // This could happen if the encrypted file has been tampered with.
+                        // FIXME: we should remove the entry from the database. But we don't have timestamp here!
+                        //val videoPending = Video(cameraName, "video_" + timestamp + ".mp4", false, true)
+                        //repository.deleteVideo(videoPending)
+                        // FIXME: should we inform the user in addition to removing the pending video?
                     }
 
                     epoch += 1;
+                    //advance the epoch
+                    with(sharedPref.edit()) {
+                        putLong("epoch$cameraName", epoch)
+                        apply()
+                    }
                 },
                 onFailure = { error ->
                     return

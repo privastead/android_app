@@ -174,7 +174,7 @@ object HttpClient {
         context: Context,
         sharedPref: SharedPreferences,
         cameraName: String,
-        chunkNumber: ULong,
+        chunkNumber: Long,
     ): Result<ByteArray> {
         val serverIp = sharedPref.getString(context.getString(R.string.saved_ip), null)
             ?: return Result.failure(Exception("Failed to retrieve the server IP address"))

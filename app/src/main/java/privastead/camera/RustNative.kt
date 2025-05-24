@@ -61,7 +61,7 @@ class RustNative {
 
     /// Used to decrypt a chunk of decrypted livestream data
     /// Returns an empty array on error
-    external fun livestreamDecrypt(cameraName: String, encData: ByteArray): ByteArray
+    external fun livestreamDecrypt(cameraName: String, encData: ByteArray, expectedChunkNumber: Long): ByteArray
 
     /// Used to apply an MLS commit message sent prior to each livestream session
     /// returns false on error.
