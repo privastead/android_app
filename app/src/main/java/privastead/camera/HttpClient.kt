@@ -59,6 +59,7 @@ object HttpClient {
         val request = Request.Builder()
             .url(fileUrl)
             .addHeader("Authorization", basicAuthHeader)
+            .addHeader("Connection", "close")
             .build()
 
         val outputFile = File(filesDir, fileName)
@@ -66,6 +67,7 @@ object HttpClient {
         val delRequest = Request.Builder()
             .url(fileUrl)
             .addHeader("Authorization", basicAuthHeader)
+            .addHeader("Connection", "close")
             .delete()
             .build()
 
@@ -116,6 +118,7 @@ object HttpClient {
         val request = Request.Builder()
             .url("http://$serverIp:8080/fcm_token")
             .addHeader("Authorization", basicAuthHeader)
+            .addHeader("Connection", "close")
             .post(requestBody)
             .build()
 
@@ -156,6 +159,7 @@ object HttpClient {
         val request = Request.Builder()
             .url("http://$serverIp:8080/livestream/$cameraLivestreamGroupName")
             .addHeader("Authorization", basicAuthHeader)
+            .addHeader("Connection", "close")
             .post(requestBody)
             .build()
 
@@ -195,11 +199,13 @@ object HttpClient {
         val request = Request.Builder()
             .url("http://$serverIp:8080/livestream/$cameraLivestreamGroupName/$chunkNumber")
             .addHeader("Authorization", basicAuthHeader)
+            .addHeader("Connection", "close")
             .build()
 
         val delRequest = Request.Builder()
             .url("http://$serverIp:8080/$cameraLivestreamGroupName/$chunkNumber")
             .addHeader("Authorization", basicAuthHeader)
+            .addHeader("Connection", "close")
             .delete()
             .build()
 
@@ -250,6 +256,7 @@ object HttpClient {
         val request = Request.Builder()
             .url("http://$serverIp:8080/livestream_end/$cameraLivestreamGroupName")
             .addHeader("Authorization", basicAuthHeader)
+            .addHeader("Connection", "close")
             .post(requestBody)
             .build()
 
